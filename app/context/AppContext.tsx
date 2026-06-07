@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { getAllInvoices, saveInvoiceToDb, deleteInvoiceFromDb } from "@/app/services/cacheDb";
 
 export interface Invoice {
   id: string;
@@ -67,6 +68,7 @@ export interface GuideMessage {
 
 interface AppState {
   isLoggedIn: boolean;
+  hydrated: boolean;
   studentName: string;
   studentId: string;
   currentStep: number;
@@ -207,10 +209,23 @@ const initialGuideMessages: GuideMessage[] = [
   },
 ];
 
+function readLoginState() {
+  try {
+    const raw = localStorage.getItem("login-state");
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data?.name && data?.id) return data as { name: string; id: string };
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
+  // 初始值与服务端渲染保持一致（未登录），登录态在 mount 后从 localStorage 恢复，
+  // 否则会触发 hydration mismatch。
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [hydrated, setHydrated] = useState(false);
   const [currentStep, setCurrentStepState] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [deductions, setDeductions] = useState<DeductionItem[]>([]);
@@ -218,10 +233,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [policies, setPolicies] = useState<PolicyDoc[]>(initialPolicies);
   const [guideMessages, setGuideMessages] = useState<GuideMessage[]>(initialGuideMessages);
 
+  const bootRef = useRef(false);
+
+  useEffect(() => {
+    if (bootRef.current) return;
+    bootRef.current = true;
+
+    // 恢复虚拟登录态
+    const saved = readLoginState();
+    if (saved) {
+      setStudentName(saved.name);
+      setStudentId(saved.id);
+      setIsLoggedIn(true);
+    }
+    setHydrated(true);
+
+    // 加载已识别票据（IndexedDB），首次为空则写入演示数据
+    getAllInvoices<Invoice>().then((dbInvoices) => {
+      if (dbInvoices.length > 0) {
+        setInvoices(dbInvoices);
+      } else {
+        initialInvoices.forEach((inv) => saveInvoiceToDb(inv).catch(() => {}));
+      }
+    });
+  }, []);
+
   const login = useCallback((name: string, id: string) => {
     setStudentName(name);
     setStudentId(id);
     setIsLoggedIn(true);
+    try { localStorage.setItem("login-state", JSON.stringify({ name, id })); } catch { /* ignore */ }
   }, []);
 
   const logout = useCallback(() => {
@@ -232,6 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setInvoices(initialInvoices);
     setDeductions([]);
     setDeclarations([]);
+    try { localStorage.removeItem("login-state"); } catch { /* ignore */ }
   }, []);
 
   const setCurrentStep = useCallback((step: number) => {
@@ -240,16 +282,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addInvoice = useCallback((invoice: Invoice) => {
     setInvoices((prev) => [...prev, invoice]);
+    saveInvoiceToDb(invoice).catch(() => {});
   }, []);
 
   const updateInvoice = useCallback((id: string, updates: Partial<Invoice>) => {
-    setInvoices((prev) =>
-      prev.map((inv) => (inv.id === id ? { ...inv, ...updates } : inv))
-    );
+    setInvoices((prev) => {
+      const next = prev.map((inv) => (inv.id === id ? { ...inv, ...updates } : inv));
+      const updated = next.find((inv) => inv.id === id);
+      if (updated) saveInvoiceToDb(updated).catch(() => {});
+      return next;
+    });
   }, []);
 
   const deleteInvoice = useCallback((id: string) => {
     setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+    deleteInvoiceFromDb(id).catch(() => {});
   }, []);
 
   const addDeduction = useCallback((deduction: DeductionItem) => {
@@ -280,6 +327,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         isLoggedIn,
+        hydrated,
         studentName,
         studentId,
         currentStep,

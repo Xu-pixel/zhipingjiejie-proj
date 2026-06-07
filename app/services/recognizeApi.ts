@@ -1,6 +1,6 @@
 /**
- * MinerU 识别服务（前端层）
- * 通过 /api/recognize API Route 调用后端，密钥不暴露
+ * 票据识别服务（前端层）
+ * 通过 /api/recognize API Route 调用后端 VLLM 大模型，密钥不暴露
  * 带 IndexedDB 缓存，相同文件（SHA-256 hash）免解析
  */
 
@@ -82,14 +82,18 @@ export async function recognizeInvoice(
 
   onProgress?.("识别完成", 100);
 
-  // 4. 存入 IndexedDB 缓存
-  await setCachedResult({
-    hash,
-    parsed: parsed as unknown,
-    markdown,
-    fileName: file.name,
-    createdAt: Date.now(),
-  });
+  // 4. 存入 IndexedDB 缓存（失败不阻塞主流程）
+  try {
+    await setCachedResult({
+      hash,
+      parsed: parsed as unknown,
+      markdown,
+      fileName: file.name,
+      createdAt: Date.now(),
+    });
+  } catch (e) {
+    console.warn("IndexedDB 缓存写入失败:", e);
+  }
 
   return { parsed, markdown };
 }

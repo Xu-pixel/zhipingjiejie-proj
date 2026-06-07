@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp, type Invoice, type InvoiceItem } from "@/app/context/AppContext";
-import { recognizeInvoice } from "@/app/services/mineruApi";
+import { recognizeInvoice } from "@/app/services/recognizeApi";
 import Layout from "@/app/components/Layout";
 
 function emptyItem(): InvoiceItem {
@@ -11,7 +11,7 @@ function emptyItem(): InvoiceItem {
 }
 
 export default function InvoicePage() {
-  const { isLoggedIn, invoices, addInvoice, updateInvoice, deleteInvoice } = useApp();
+  const { isLoggedIn, hydrated, invoices, addInvoice, updateInvoice, deleteInvoice } = useApp();
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -25,8 +25,8 @@ export default function InvoicePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/");
-  }, [isLoggedIn, router]);
+    if (hydrated && !isLoggedIn) router.push("/");
+  }, [hydrated, isLoggedIn, router]);
 
   const processFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;

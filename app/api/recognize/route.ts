@@ -1,86 +1,9 @@
-import JSZip from "jszip";
+const VLLM_URL = process.env.VLLM_URL || "https://llmapi.blsc.cn";
+const VLLM_API_KEY = process.env.VLLM_API_KEY;
+const VLLM_MODEL = "Kimi-K2.6";
 
-const MINERU_BASE = "https://mineru.net/api/v4";
-const DEEPSEEK_BASE = "https://api.deepseek.com";
-const MINERU_TOKEN = process.env.MINERU_TOKEN;
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY;
-
-if (!MINERU_TOKEN) {
-  throw new Error("Missing MINERU_TOKEN environment variable");
-}
-if (!DEEPSEEK_KEY) {
-  throw new Error("Missing DEEPSEEK_API_KEY environment variable");
-}
-
-function getMineruHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${MINERU_TOKEN}`,
-  };
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-interface BatchStatus {
-  state: string;
-  fullZipUrl?: string;
-  errMsg?: string;
-}
-
-async function queryBatchStatus(batchId: string): Promise<BatchStatus> {
-  const res = await fetch(`${MINERU_BASE}/extract-results/batch/${batchId}`, {
-    method: "GET",
-    headers: getMineruHeaders(),
-  });
-
-  if (!res.ok) {
-    throw new Error(`查询任务失败: ${res.status} ${res.statusText}`);
-  }
-
-  const json = await res.json();
-  if (json.code !== 0) {
-    throw new Error(`API错误: ${json.msg || "未知错误"}`);
-  }
-
-  const data = json.data as {
-    batch_id: string;
-    extract_result?: Array<{
-      file_name: string;
-      state: string;
-      full_zip_url?: string;
-      err_msg?: string;
-    }>;
-  };
-
-  const result = data.extract_result?.[0];
-  if (!result) {
-    return { state: "waiting-file" };
-  }
-
-  return {
-    state: result.state,
-    fullZipUrl: result.full_zip_url,
-    errMsg: result.err_msg,
-  };
-}
-
-async function downloadAndParse(zipUrl: string): Promise<string> {
-  const res = await fetch(zipUrl);
-  if (!res.ok) {
-    throw new Error(`下载结果失败: ${res.status}`);
-  }
-
-  const arrayBuffer = await res.arrayBuffer();
-  const zip = await JSZip.loadAsync(arrayBuffer);
-
-  const mdFile = zip.file("full.md");
-  if (!mdFile) {
-    throw new Error("ZIP 中未找到 full.md");
-  }
-
-  return mdFile.async("string");
+if (!VLLM_API_KEY) {
+  throw new Error("Missing VLLM_API_KEY environment variable");
 }
 
 export interface ExtractedInvoice {
@@ -103,11 +26,10 @@ export interface ExtractedInvoice {
   }>;
 }
 
-async function extractInvoiceWithLLM(markdown: string): Promise<ExtractedInvoice> {
-  const systemPrompt = `你是一个专业的财务票据信息提取助手。请从用户提供的票据文本中提取关键信息，并以严格 JSON 格式返回，不要包含任何额外文字。
+const SYSTEM_PROMPT = `你是一个专业的财务票据识别与信息提取助手。请仔细查看用户上传的票据图片或文本，提取以下字段并以严格 JSON 格式返回，不要包含任何额外文字（如 markdown 代码块标记）。
 
 需要提取的字段及说明：
-- type: 发票类型，如"增值税专用发票"、"增值税普通发票"等
+- type: 发票类型，如"增值税专用发票"、"增值税普通发票"、"电子发票"、"机动车销售统一发票"等
 - number: 发票号码
 - date: 开票日期，格式统一为 YYYY-MM-DD
 - seller: 销方名称（销售方）
@@ -124,7 +46,7 @@ async function extractInvoiceWithLLM(markdown: string): Promise<ExtractedInvoice
   - taxRate: 税率
   - taxAmount: 税额（数值）
 
-如果某个字段无法从文本中找到，使用以下默认值：
+如果某个字段无法找到，使用以下默认值：
 - type: "增值税专用发票"
 - number: ""
 - date: 当天日期
@@ -136,17 +58,27 @@ async function extractInvoiceWithLLM(markdown: string): Promise<ExtractedInvoice
 - totalAmount: 0
 - items: []`;
 
-  const res = await fetch(`${DEEPSEEK_BASE}/chat/completions`, {
+function isImageType(type: string): boolean {
+  return type.startsWith("image/");
+}
+
+async function callVLLM(
+  content: Array<{ type: string; [key: string]: unknown }>
+): Promise<ExtractedInvoice> {
+  const res = await fetch(`${VLLM_URL}/v1/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${DEEPSEEK_KEY}`,
+      "Authorization": `Bearer ${VLLM_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "deepseek-v4-flash",
+      model: VLLM_MODEL,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `请从以下票据文本中提取信息并返回 JSON：\n\n${markdown}` },
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content,
+        },
       ],
       response_format: { type: "json_object" },
       temperature: 0.1,
@@ -155,16 +87,22 @@ async function extractInvoiceWithLLM(markdown: string): Promise<ExtractedInvoice
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    throw new Error(`DeepSeek API 调用失败: ${res.status} ${errText}`);
+    throw new Error(`VLLM API 调用失败: ${res.status} ${errText}`);
   }
 
   const json = await res.json();
-  const content = json.choices?.[0]?.message?.content as string | undefined;
-  if (!content) {
-    throw new Error("DeepSeek 返回结果为空");
+  const text = json.choices?.[0]?.message?.content as string | undefined;
+  if (!text) {
+    throw new Error("VLLM 返回结果为空");
   }
 
-  const parsed = JSON.parse(content) as Partial<ExtractedInvoice>;
+  // 清理可能的 markdown 代码块、引用符号等噪音
+  const clean = text
+    .replace(/^```json\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .replace(/^>\s?/gm, "")
+    .trim();
+  const parsed = JSON.parse(clean) as Partial<ExtractedInvoice>;
 
   const today = new Date().toISOString().split("T")[0];
   return {
@@ -192,7 +130,7 @@ async function extractInvoiceWithLLM(markdown: string): Promise<ExtractedInvoice
 
 /**
  * POST /api/recognize
- * 完整识别流程：MinerU 解析 → DeepSeek LLM 提取 → 返回结构化数据
+ * 直接调用 VLLM 多模态模型（Kimi-K2.6）识别票据并提取结构化信息
  */
 export async function POST(request: Request) {
   try {
@@ -202,74 +140,54 @@ export async function POST(request: Request) {
       return Response.json({ error: "未提供文件" }, { status: 400 });
     }
 
-    // 1. 申请 MinerU 上传链接
-    const files = [{ name: file.name, data_id: `invoice_${Date.now()}` }];
-    const urlRes = await fetch(`${MINERU_BASE}/file-urls/batch`, {
-      method: "POST",
-      headers: getMineruHeaders(),
-      body: JSON.stringify({
-        files,
-        model_version: "vlm",
-        is_ocr: true,
-        enable_table: true,
-        language: "ch",
-      }),
-    });
+    let content: Array<{ type: string; [key: string]: unknown }>;
 
-    if (!urlRes.ok) {
-      throw new Error(`申请上传链接失败: ${urlRes.status} ${urlRes.statusText}`);
-    }
-
-    const urlJson = await urlRes.json();
-    if (urlJson.code !== 0) {
-      throw new Error(`API错误: ${urlJson.msg || "未知错误"}`);
-    }
-
-    const { batch_id: batchId, file_urls: fileUrls } = urlJson.data as {
-      batch_id: string;
-      file_urls: string[];
-    };
-
-    const uploadUrl = fileUrls?.[0];
-    if (!uploadUrl) throw new Error("未获取到上传链接");
-    if (!batchId) throw new Error("未获取到批次ID");
-
-    // 2. 后端 PUT 上传文件
-    const arrayBuffer = await file.arrayBuffer();
-    const putRes = await fetch(uploadUrl, { method: "PUT", body: arrayBuffer });
-    if (!putRes.ok) {
-      throw new Error(`文件上传失败: ${putRes.status} ${putRes.statusText}`);
-    }
-
-    // 3. 后端轮询等待解析完成
-    let batchResult: BatchStatus;
-    for (let i = 0; i < 120; i++) {
-      batchResult = await queryBatchStatus(batchId);
-
-      if (batchResult.state === "done") {
-        break;
+    if (isImageType(file.type)) {
+      // 图片文件：转为 base64 data URL
+      const bytes = await file.bytes();
+      const base64 = Buffer.from(bytes).toString("base64");
+      const dataUrl = `data:${file.type};base64,${base64}`;
+      content = [
+        { type: "text", text: "请识别以下票据图片，提取发票信息并以 JSON 格式返回。" },
+        { type: "image_url", image_url: { url: dataUrl } },
+      ];
+    } else {
+      // 非图片文件：尝试读取文本内容
+      const textContent = await file.text().catch(() => "");
+      if (!textContent.trim()) {
+        return Response.json(
+          { error: "无法读取该文件内容，请上传图片格式（PNG、JPG 等）的票据" },
+          { status: 400 }
+        );
       }
-
-      if (batchResult.state === "failed") {
-        throw new Error(`解析失败: ${batchResult.errMsg || "未知错误"}`);
-      }
-
-      await sleep(3000);
+      content = [
+        { type: "text", text: `请从以下票据文本中提取发票信息并以 JSON 格式返回：\n\n${textContent}` },
+      ];
     }
 
-    if (!batchResult! || batchResult.state !== "done") {
-      throw new Error("解析超时，请稍后重试");
-    }
+    const parsed = await callVLLM(content);
 
-    if (!batchResult.fullZipUrl) {
-      throw new Error("解析结果不可用");
-    }
-
-    // 4. 下载 ZIP 并解压得到 markdown
-    const markdown = await downloadAndParse(batchResult.fullZipUrl);
-
-    // 5. DeepSeek LLM 提取结构化发票信息
-    const parsed = await extractInvoiceWithLLM(markdown);
+    // 构造一个 markdown 摘要用于前端预览
+    const markdown = [
+      `## 发票识别结果`,
+      "",
+      `- **发票类型**: ${parsed.type}`,
+      `- **发票号码**: ${parsed.number}`,
+      `- **开票日期**: ${parsed.date}`,
+      `- **销方名称**: ${parsed.seller}`,
+      `- **购方名称**: ${parsed.buyer}`,
+      `- **不含税金额**: ¥${parsed.amount.toLocaleString()}`,
+      `- **税率**: ${(parsed.taxRate * 100).toFixed(0)}%`,
+      `- **税额**: ¥${parsed.taxAmount.toLocaleString()}`,
+      `- **价税合计**: ¥${parsed.totalAmount.toLocaleString()}`,
+      "",
+      "### 明细清单",
+      "",
+      ...parsed.items.map(
+        (it, i) =>
+          `${i + 1}. ${it.name} × ${it.quantity} @ ¥${it.unitPrice.toLocaleString()} = ¥${it.amount.toLocaleString()} (税额 ¥${it.taxAmount.toLocaleString()})`
+      ),
+    ].join("\n");
 
     return Response.json({ markdown, parsed });
   } catch (err: unknown) {

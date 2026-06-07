@@ -28,7 +28,7 @@ const initialMessages: ChatMessage[] = [
 ];
 
 function PolicyContent() {
-  const { isLoggedIn, policies, readPolicy } = useApp();
+  const { isLoggedIn, hydrated, policies, readPolicy } = useApp();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -38,8 +38,8 @@ function PolicyContent() {
   const [inputText, setInputText] = useState("");
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/");
-  }, [isLoggedIn, router]);
+    if (hydrated && !isLoggedIn) router.push("/");
+  }, [hydrated, isLoggedIn, router]);
 
   const policy = policies.find((p) => p.id === selectedPolicy);
   const categories = Array.from(new Set(policies.map((p) => p.category)));

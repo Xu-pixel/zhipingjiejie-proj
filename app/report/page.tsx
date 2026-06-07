@@ -6,15 +6,15 @@ import { useApp } from "@/app/context/AppContext";
 import Layout from "@/app/components/Layout";
 
 export default function ReportPage() {
-  const { isLoggedIn, studentName, declarations } = useApp();
+  const { isLoggedIn, hydrated, studentName, declarations } = useApp();
   const router = useRouter();
   const [selectedDec, setSelectedDec] = useState<string | null>(
     declarations.length > 0 ? declarations[0].id : null
   );
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/");
-  }, [isLoggedIn, router]);
+    if (hydrated && !isLoggedIn) router.push("/");
+  }, [hydrated, isLoggedIn, router]);
 
   const declaration = declarations.find((d) => d.id === selectedDec);
 

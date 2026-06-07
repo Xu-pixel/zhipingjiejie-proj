@@ -6,14 +6,14 @@ import { useApp } from "@/app/context/AppContext";
 import Layout from "@/app/components/Layout";
 
 export default function DeclarationPage() {
-  const { isLoggedIn, invoices, deductions, declarations, addDeclaration } = useApp();
+  const { isLoggedIn, hydrated, invoices, deductions, declarations, addDeclaration } = useApp();
   const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
   const [period, setPeriod] = useState("2024-05");
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/");
-  }, [isLoggedIn, router]);
+    if (hydrated && !isLoggedIn) router.push("/");
+  }, [hydrated, isLoggedIn, router]);
 
   const recognizedInvoices = invoices.filter((i) => i.status === "calculated" || i.status === "declared");
   const submittedDeductions = deductions.filter((d) => d.status === "submitted");

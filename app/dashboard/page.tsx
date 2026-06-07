@@ -20,12 +20,12 @@ const quickLinks = [
 ];
 
 export default function DashboardPage() {
-  const { isLoggedIn, studentName, invoices, declarations } = useApp();
+  const { isLoggedIn, hydrated, studentName, invoices, declarations } = useApp();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/");
-  }, [isLoggedIn, router]);
+    if (hydrated && !isLoggedIn) router.push("/");
+  }, [hydrated, isLoggedIn, router]);
 
   if (!isLoggedIn) return null;
 

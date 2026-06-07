@@ -6,23 +6,23 @@ import { useApp } from "@/app/context/AppContext";
 import Layout from "@/app/components/Layout";
 
 const deductionCategories = [
-  { value: "productive", label: "生产性服务业（5%）", rate: 0.05 },
-  { value: "living", label: "生活性服务业（10%）", rate: 0.10 },
+  { value: "rd", label: "研发费用（100%）", rate: 1.0 },
+  { value: "energy", label: "节能设备抵免（15%）", rate: 0.15 },
   { value: "green", label: "绿色采购加计抵减（15%）", rate: 0.15 },
   { value: "tech", label: "科技研发加计抵减（10%）", rate: 0.10 },
 ];
 
 export default function DeductionPage() {
-  const { isLoggedIn, invoices, deductions, addDeduction, updateDeduction } = useApp();
+  const { isLoggedIn, hydrated, invoices, deductions, addDeduction, updateDeduction } = useApp();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
-  const [category, setCategory] = useState("productive");
-  const [period, setPeriod] = useState("2024-05");
+  const [category, setCategory] = useState("rd");
+  const [period, setPeriod] = useState("2026-06");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/");
-  }, [isLoggedIn, router]);
+    if (hydrated && !isLoggedIn) router.push("/");
+  }, [hydrated, isLoggedIn, router]);
 
   const recognizedInvoices = invoices.filter((i) => i.status === "calculated" || i.status === "declared");
   const totalInputTax = recognizedInvoices.reduce((s, i) => s + i.taxAmount, 0);
@@ -61,7 +61,7 @@ export default function DeductionPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-slate-800">加计抵减填报</h1>
-            <p className="text-sm text-slate-500">填写增值税加计抵减申报表，享受税收优惠</p>
+            <p className="text-sm text-slate-500">填写企业所得税加计扣除申报表，享受税收优惠</p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -140,28 +140,6 @@ export default function DeductionPage() {
                 className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none text-sm resize-none"
               />
             </div>
-
-            {(() => {
-              const cat = deductionCategories.find((c) => c.value === category);
-              if (!cat) return null;
-              const amount = +(totalInputTax * cat.rate).toFixed(2);
-              return (
-                <div className="bg-slate-50 rounded-lg p-3 mb-4 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">进项税额</span>
-                    <span className="font-medium text-slate-700">¥{totalInputTax.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="text-slate-500">加计抵减率</span>
-                    <span className="font-medium text-emerald-600">{(cat.rate * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="flex justify-between mt-1 pt-1 border-t border-slate-200">
-                    <span className="text-slate-700 font-medium">预计抵减额</span>
-                    <span className="font-bold text-emerald-600">¥{amount.toLocaleString()}</span>
-                  </div>
-                </div>
-              );
-            })()}
 
             <div className="flex justify-end gap-2">
               <button

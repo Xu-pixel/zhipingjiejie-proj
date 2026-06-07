@@ -6,12 +6,12 @@ import { useApp } from "@/app/context/AppContext";
 import Layout from "@/app/components/Layout";
 
 export default function TaxCalculationPage() {
-  const { isLoggedIn, invoices, updateInvoice } = useApp();
+  const { isLoggedIn, hydrated, invoices, updateInvoice } = useApp();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoggedIn) router.push("/");
-  }, [isLoggedIn, router]);
+    if (hydrated && !isLoggedIn) router.push("/");
+  }, [hydrated, isLoggedIn, router]);
 
   const recognizedInvoices = invoices.filter((i) => i.status !== "pending");
 
