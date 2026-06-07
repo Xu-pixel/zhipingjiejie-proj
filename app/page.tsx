@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/app/context/AppContext";
 
@@ -9,8 +9,13 @@ export default function Login() {
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useApp();
+  const { login, isLoggedIn, hydrated } = useApp();
   const router = useRouter();
+
+  // 已登录（含从 localStorage 恢复的登录态）则直接进入工作台
+  useEffect(() => {
+    if (hydrated && isLoggedIn) router.replace("/dashboard");
+  }, [hydrated, isLoggedIn, router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
