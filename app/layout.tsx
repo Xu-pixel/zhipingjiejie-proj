@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "3D智慧财税仿真平台",
   description: "人工智能应用 · 实践教学",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.svg",
   },
 };
 

@@ -129,6 +129,75 @@ const initialPolicies: PolicyDoc[] = [
   },
 ];
 
+const initialInvoices: Invoice[] = [
+  {
+    id: "demo-001",
+    type: "增值税专用发票",
+    number: "4400123456",
+    date: "2024-05-10",
+    seller: "深圳华为技术有限公司",
+    buyer: "广东智慧科技有限公司",
+    amount: 88495.58,
+    taxRate: 0.13,
+    taxAmount: 11504.42,
+    totalAmount: 100000,
+    status: "recognized",
+    items: [
+      { name: "服务器主机", quantity: 2, unitPrice: 35398.23, amount: 70796.46, taxRate: 0.13, taxAmount: 9203.54 },
+      { name: "网络交换机", quantity: 1, unitPrice: 17699.12, amount: 17699.12, taxRate: 0.13, taxAmount: 2300.88 },
+    ],
+  },
+  {
+    id: "demo-002",
+    type: "增值税普通发票",
+    number: "4400987654",
+    date: "2024-05-15",
+    seller: "广州白云办公设备有限公司",
+    buyer: "广东智慧科技有限公司",
+    amount: 2654.87,
+    taxRate: 0.13,
+    taxAmount: 345.13,
+    totalAmount: 3000,
+    status: "recognized",
+    items: [
+      { name: "办公桌椅", quantity: 5, unitPrice: 530.97, amount: 2654.87, taxRate: 0.13, taxAmount: 345.13 },
+    ],
+  },
+  {
+    id: "demo-003",
+    type: "电子发票",
+    number: "EL20240518001",
+    date: "2024-05-18",
+    seller: "杭州阿里云科技有限公司",
+    buyer: "广东智慧科技有限公司",
+    amount: 4716.98,
+    taxRate: 0.06,
+    taxAmount: 283.02,
+    totalAmount: 5000,
+    status: "calculated",
+    items: [
+      { name: "云服务器租赁服务", quantity: 12, unitPrice: 393.08, amount: 4716.98, taxRate: 0.06, taxAmount: 283.02 },
+    ],
+  },
+  {
+    id: "demo-004",
+    type: "增值税专用发票",
+    number: "4400332211",
+    date: "2024-05-22",
+    seller: "北京用友网络科技股份有限公司",
+    buyer: "广东智慧科技有限公司",
+    amount: 16814.16,
+    taxRate: 0.13,
+    taxAmount: 2185.84,
+    totalAmount: 19000,
+    status: "recognized",
+    items: [
+      { name: "财务软件许可", quantity: 1, unitPrice: 8849.56, amount: 8849.56, taxRate: 0.13, taxAmount: 1150.44 },
+      { name: "实施服务费", quantity: 1, unitPrice: 7964.60, amount: 7964.60, taxRate: 0.13, taxAmount: 1035.40 },
+    ],
+  },
+];
+
 const initialGuideMessages: GuideMessage[] = [
   {
     id: "g1",
@@ -143,7 +212,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [studentName, setStudentName] = useState("");
   const [studentId, setStudentId] = useState("");
   const [currentStep, setCurrentStepState] = useState(0);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [deductions, setDeductions] = useState<DeductionItem[]>([]);
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [policies, setPolicies] = useState<PolicyDoc[]>(initialPolicies);
@@ -160,7 +229,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setStudentName("");
     setStudentId("");
     setCurrentStepState(0);
-    setInvoices([]);
+    setInvoices(initialInvoices);
     setDeductions([]);
     setDeclarations([]);
   }, []);

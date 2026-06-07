@@ -2,12 +2,16 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp, type Invoice } from "@/app/context/AppContext";
+import { useApp, type Invoice, type InvoiceItem } from "@/app/context/AppContext";
 import { recognizeInvoice } from "@/app/services/mineruApi";
 import Layout from "@/app/components/Layout";
 
+function emptyItem(): InvoiceItem {
+  return { name: "", quantity: 1, unitPrice: 0, amount: 0, taxRate: 0.13, taxAmount: 0 };
+}
+
 export default function InvoicePage() {
-  const { isLoggedIn, invoices, addInvoice, updateInvoice } = useApp();
+  const { isLoggedIn, invoices, addInvoice, updateInvoice, deleteInvoice } = useApp();
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -16,6 +20,8 @@ export default function InvoicePage() {
   const [error, setError] = useState("");
   const [parsedPreview, setParsedPreview] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Invoice>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -69,6 +75,7 @@ export default function InvoicePage() {
 
         addInvoice(invoice);
         setSelectedId(invoiceId);
+        setIsEditing(false);
         setProgressMsg("识别完成！");
         setProgressPercent(100);
 
@@ -150,12 +157,86 @@ export default function InvoicePage() {
 
       addInvoice(invoice);
       setSelectedId(invoiceId);
+      setIsEditing(false);
       setError("识别服务暂不可用，已创建占位记录，请稍后重试。");
     };
     reader.readAsText(file);
   };
 
   const selectedInvoice = invoices.find((i) => i.id === selectedId);
+
+  const startEdit = useCallback(() => {
+    if (!selectedInvoice) return;
+    setEditForm({ ...selectedInvoice });
+    setIsEditing(true);
+  }, [selectedInvoice]);
+
+  const cancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setEditForm({});
+  }, []);
+
+  const saveEdit = useCallback(() => {
+    if (!selectedInvoice || !editForm) return;
+    const updated: Partial<Invoice> = { ...editForm };
+    const items = updated.items ?? selectedInvoice.items;
+    const amount = items.reduce((s, it) => s + (it.amount || 0), 0);
+    const taxAmount = items.reduce((s, it) => s + (it.taxAmount || 0), 0);
+    updated.amount = amount;
+    updated.taxAmount = taxAmount;
+    updated.totalAmount = amount + taxAmount;
+    updateInvoice(selectedInvoice.id, updated);
+    setIsEditing(false);
+    setEditForm({});
+  }, [selectedInvoice, editForm, updateInvoice]);
+
+  const handleDelete = useCallback((id: string) => {
+    if (!confirm("确定要删除这张票据吗？")) return;
+    deleteInvoice(id);
+    if (selectedId === id) {
+      setSelectedId(null);
+      setIsEditing(false);
+      setEditForm({});
+    }
+  }, [deleteInvoice, selectedId]);
+
+  const updateEditField = <K extends keyof Invoice>(field: K, value: Invoice[K]) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateItemField = (idx: number, field: keyof InvoiceItem, value: string | number) => {
+    setEditForm((prev) => {
+      const items = [...(prev.items ?? selectedInvoice?.items ?? [])];
+      const it = { ...items[idx], [field]: value };
+      if (field === "quantity" || field === "unitPrice") {
+        const qty = field === "quantity" ? Number(value) : Number(it.quantity);
+        const up = field === "unitPrice" ? Number(value) : Number(it.unitPrice);
+        it.amount = Math.round(qty * up * 100) / 100;
+      }
+      if (field === "amount" || field === "taxRate") {
+        const amt = field === "amount" ? Number(value) : Number(it.amount);
+        const tr = field === "taxRate" ? Number(value) : Number(it.taxRate);
+        it.taxAmount = Math.round(amt * tr * 100) / 100;
+      }
+      items[idx] = it;
+      return { ...prev, items };
+    });
+  };
+
+  const removeItem = (idx: number) => {
+    setEditForm((prev) => {
+      const items = [...(prev.items ?? selectedInvoice?.items ?? [])];
+      items.splice(idx, 1);
+      return { ...prev, items };
+    });
+  };
+
+  const addItem = () => {
+    setEditForm((prev) => {
+      const items = [...(prev.items ?? selectedInvoice?.items ?? []), emptyItem()];
+      return { ...prev, items };
+    });
+  };
 
   if (!isLoggedIn) return null;
 
@@ -251,16 +332,25 @@ export default function InvoicePage() {
               </div>
             ) : (
               invoices.map((inv) => (
-                <button
+                <div
                   key={inv.id}
-                  onClick={() => setSelectedId(inv.id)}
-                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                  className={`group relative w-full text-left p-3 rounded-lg border transition-all cursor-pointer ${
                     selectedId === inv.id
                       ? "border-emerald-500 bg-emerald-50 shadow-sm"
                       : "border-slate-200 bg-white hover:border-emerald-300"
                   }`}
+                  onClick={() => { setSelectedId(inv.id); setIsEditing(false); }}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(inv.id); }}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-600"
+                    title="删除"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                  <div className="flex items-center justify-between mb-1 pr-6">
                     <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
                       {inv.type}
                     </span>
@@ -275,7 +365,7 @@ export default function InvoicePage() {
                     <span className="text-xs text-slate-500">{inv.number}</span>
                     <span className="text-sm font-bold text-slate-700">¥{inv.amount.toLocaleString()}</span>
                   </div>
-                </button>
+                </div>
               ))
             )}
           </div>
@@ -285,81 +375,282 @@ export default function InvoicePage() {
               <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-slate-800">票据详情</h3>
-                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    {selectedInvoice.type}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 mb-0.5">发票号码</p>
-                    <p className="text-sm font-medium text-slate-800">{selectedInvoice.number}</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 mb-0.5">开票日期</p>
-                    <p className="text-sm font-medium text-slate-800">{selectedInvoice.date}</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 mb-0.5">销方名称</p>
-                    <p className="text-sm font-medium text-slate-800">{selectedInvoice.seller}</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 mb-0.5">购方名称</p>
-                    <p className="text-sm font-medium text-slate-800">{selectedInvoice.buyer}</p>
-                  </div>
-                </div>
-
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">明细清单</h4>
-                <table className="w-full text-sm mb-4">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-600">
-                      <th className="text-left py-2 px-2 rounded-tl-lg text-xs">项目名称</th>
-                      <th className="text-right py-2 px-2 text-xs">数量</th>
-                      <th className="text-right py-2 px-2 text-xs">单价</th>
-                      <th className="text-right py-2 px-2 text-xs">金额</th>
-                      <th className="text-right py-2 px-2 rounded-tr-lg text-xs">税额</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInvoice.items.map((item, idx) => (
-                      <tr key={idx} className="border-b border-slate-100">
-                        <td className="py-2 px-2 text-slate-700">{item.name}</td>
-                        <td className="text-right py-2 px-2 text-slate-600">{item.quantity}</td>
-                        <td className="text-right py-2 px-2 text-slate-600">¥{item.unitPrice.toLocaleString()}</td>
-                        <td className="text-right py-2 px-2 text-slate-700 font-medium">¥{item.amount.toLocaleString()}</td>
-                        <td className="text-right py-2 px-2 text-emerald-600">¥{item.taxAmount.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <div className="border-t border-slate-200 pt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">不含税金额</span>
-                    <span className="font-medium text-slate-800">¥{selectedInvoice.amount.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">税率</span>
-                    <span className="font-medium text-slate-800">{(selectedInvoice.taxRate * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">税额</span>
-                    <span className="font-medium text-emerald-600">¥{selectedInvoice.taxAmount.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-base font-bold border-t border-slate-200 pt-2">
-                    <span className="text-slate-800">价税合计</span>
-                    <span className="text-emerald-600">¥{selectedInvoice.totalAmount.toLocaleString()}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                      {selectedInvoice.type}
+                    </span>
+                    {!isEditing && (
+                      <>
+                        <button
+                          onClick={startEdit}
+                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-emerald-600 transition-colors"
+                          title="编辑"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(selectedInvoice.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition-colors"
+                          title="删除"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => updateInvoice(selectedInvoice.id, { status: "calculated" })}
-                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
-                  >
-                    确认并进入税额计算
-                  </button>
-                </div>
+                {isEditing ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">发票类型</label>
+                        <select
+                          className="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                          value={editForm.type ?? selectedInvoice.type}
+                          onChange={(e) => updateEditField("type", e.target.value)}
+                        >
+                          <option>增值税专用发票</option>
+                          <option>增值税普通发票</option>
+                          <option>电子发票</option>
+                          <option>机动车销售统一发票</option>
+                          <option>其他</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">发票号码</label>
+                        <input
+                          className="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                          value={editForm.number ?? selectedInvoice.number}
+                          onChange={(e) => updateEditField("number", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">开票日期</label>
+                        <input
+                          type="date"
+                          className="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                          value={editForm.date ?? selectedInvoice.date}
+                          onChange={(e) => updateEditField("date", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">税率</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                          value={editForm.taxRate ?? selectedInvoice.taxRate}
+                          onChange={(e) => updateEditField("taxRate", Number(e.target.value))}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs text-slate-500 mb-1">销方名称</label>
+                        <input
+                          className="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                          value={editForm.seller ?? selectedInvoice.seller}
+                          onChange={(e) => updateEditField("seller", e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs text-slate-500 mb-1">购方名称</label>
+                        <input
+                          className="w-full text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+                          value={editForm.buyer ?? selectedInvoice.buyer}
+                          onChange={(e) => updateEditField("buyer", e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">明细清单</h4>
+                      <button
+                        onClick={addItem}
+                        className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium px-2 py-1 rounded hover:bg-emerald-50 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        添加行
+                      </button>
+                    </div>
+                    <div className="overflow-x-auto mb-4">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600">
+                            <th className="text-left py-2 px-2 rounded-tl-lg text-xs">项目名称</th>
+                            <th className="text-right py-2 px-2 text-xs">数量</th>
+                            <th className="text-right py-2 px-2 text-xs">单价</th>
+                            <th className="text-right py-2 px-2 text-xs">金额</th>
+                            <th className="text-right py-2 px-2 text-xs">税率</th>
+                            <th className="text-right py-2 px-2 rounded-tr-lg text-xs">税额</th>
+                            <th className="text-center py-2 px-2 text-xs w-8"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(editForm.items ?? selectedInvoice.items).map((item, idx) => (
+                            <tr key={idx} className="border-b border-slate-100">
+                              <td className="py-1.5 px-1">
+                                <input
+                                  className="w-full text-xs border border-slate-300 rounded px-1.5 py-1 focus:outline-none focus:border-emerald-500"
+                                  value={item.name}
+                                  onChange={(e) => updateItemField(idx, "name", e.target.value)}
+                                />
+                              </td>
+                              <td className="py-1.5 px-1">
+                                <input
+                                  type="number"
+                                  className="w-16 text-xs border border-slate-300 rounded px-1.5 py-1 text-right focus:outline-none focus:border-emerald-500"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItemField(idx, "quantity", Number(e.target.value))}
+                                />
+                              </td>
+                              <td className="py-1.5 px-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  className="w-20 text-xs border border-slate-300 rounded px-1.5 py-1 text-right focus:outline-none focus:border-emerald-500"
+                                  value={item.unitPrice}
+                                  onChange={(e) => updateItemField(idx, "unitPrice", Number(e.target.value))}
+                                />
+                              </td>
+                              <td className="py-1.5 px-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  className="w-20 text-xs border border-slate-300 rounded px-1.5 py-1 text-right focus:outline-none focus:border-emerald-500"
+                                  value={item.amount}
+                                  onChange={(e) => updateItemField(idx, "amount", Number(e.target.value))}
+                                />
+                              </td>
+                              <td className="py-1.5 px-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  className="w-16 text-xs border border-slate-300 rounded px-1.5 py-1 text-right focus:outline-none focus:border-emerald-500"
+                                  value={item.taxRate}
+                                  onChange={(e) => updateItemField(idx, "taxRate", Number(e.target.value))}
+                                />
+                              </td>
+                              <td className="py-1.5 px-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  className="w-20 text-xs border border-slate-300 rounded px-1.5 py-1 text-right focus:outline-none focus:border-emerald-500"
+                                  value={item.taxAmount}
+                                  onChange={(e) => updateItemField(idx, "taxAmount", Number(e.target.value))}
+                                />
+                              </td>
+                              <td className="py-1.5 px-1 text-center">
+                                <button
+                                  onClick={() => removeItem(idx)}
+                                  className="p-0.5 rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
+                                  title="删除行"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={saveEdit}
+                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        保存修改
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-xs text-slate-500 mb-0.5">发票号码</p>
+                        <p className="text-sm font-medium text-slate-800">{selectedInvoice.number}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-xs text-slate-500 mb-0.5">开票日期</p>
+                        <p className="text-sm font-medium text-slate-800">{selectedInvoice.date}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-xs text-slate-500 mb-0.5">销方名称</p>
+                        <p className="text-sm font-medium text-slate-800">{selectedInvoice.seller}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-xs text-slate-500 mb-0.5">购方名称</p>
+                        <p className="text-sm font-medium text-slate-800">{selectedInvoice.buyer}</p>
+                      </div>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">明细清单</h4>
+                    <table className="w-full text-sm mb-4">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-600">
+                          <th className="text-left py-2 px-2 rounded-tl-lg text-xs">项目名称</th>
+                          <th className="text-right py-2 px-2 text-xs">数量</th>
+                          <th className="text-right py-2 px-2 text-xs">单价</th>
+                          <th className="text-right py-2 px-2 text-xs">金额</th>
+                          <th className="text-right py-2 px-2 rounded-tr-lg text-xs">税额</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedInvoice.items.map((item, idx) => (
+                          <tr key={idx} className="border-b border-slate-100">
+                            <td className="py-2 px-2 text-slate-700">{item.name}</td>
+                            <td className="text-right py-2 px-2 text-slate-600">{item.quantity}</td>
+                            <td className="text-right py-2 px-2 text-slate-600">¥{item.unitPrice.toLocaleString()}</td>
+                            <td className="text-right py-2 px-2 text-slate-700 font-medium">¥{item.amount.toLocaleString()}</td>
+                            <td className="text-right py-2 px-2 text-emerald-600">¥{item.taxAmount.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div className="border-t border-slate-200 pt-3 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">不含税金额</span>
+                        <span className="font-medium text-slate-800">¥{selectedInvoice.amount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">税率</span>
+                        <span className="font-medium text-slate-800">{(selectedInvoice.taxRate * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">税额</span>
+                        <span className="font-medium text-emerald-600">¥{selectedInvoice.taxAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-base font-bold border-t border-slate-200 pt-2">
+                        <span className="text-slate-800">价税合计</span>
+                        <span className="text-emerald-600">¥{selectedInvoice.totalAmount.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        onClick={() => updateInvoice(selectedInvoice.id, { status: "calculated" })}
+                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        确认并进入税额计算
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="bg-slate-50 rounded-xl border border-dashed border-slate-200 p-12 text-center">
