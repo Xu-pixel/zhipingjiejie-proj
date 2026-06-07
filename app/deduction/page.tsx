@@ -26,6 +26,7 @@ export default function DeductionPage() {
 
   const recognizedInvoices = invoices.filter((i) => i.status === "calculated" || i.status === "declared");
   const totalInputTax = recognizedInvoices.reduce((s, i) => s + i.taxAmount, 0);
+  const maxRate = Math.max(...deductionCategories.map((c) => c.rate));
 
   const handleSubmit = () => {
     const cat = deductionCategories.find((c) => c.value === category);
@@ -41,7 +42,7 @@ export default function DeductionPage() {
       deductionRate: cat.rate,
       deductionAmount,
       category: cat.label,
-      description: description || `${cat.label}加计抵减申报`,
+      description: description || `${cat.label}加计扣除申报`,
       status: "draft",
     });
 
@@ -57,7 +58,7 @@ export default function DeductionPage() {
 
   return (
     <Layout>
-      <div className="p-6 max-w-5xl">
+      <div className="p-6 w-full">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-slate-800">加计抵减填报</h1>
@@ -65,7 +66,7 @@ export default function DeductionPage() {
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -74,20 +75,23 @@ export default function DeductionPage() {
           </button>
         </div>
 
-        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-5 mb-6">
-          <h3 className="text-sm font-bold text-emerald-800 mb-3">当期可抵扣进项税额</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <p className="text-xs text-emerald-600 mb-1">已确认票据数</p>
-              <p className="text-xl font-bold text-emerald-700">{recognizedInvoices.length} <span className="text-sm font-normal">张</span></p>
-            </div>
-            <div>
-              <p className="text-xs text-emerald-600 mb-1">进项税额合计</p>
-              <p className="text-xl font-bold text-emerald-700">¥{totalInputTax.toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-xs text-emerald-600 mb-1">最大抵减额（按15%）</p>
-              <p className="text-xl font-bold text-emerald-700">¥{(totalInputTax * 0.15).toFixed(2)}</p>
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
+          <div className="h-0.5 bg-emerald-500" />
+          <div className="p-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3">当期可加计扣除基数</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-slate-500 mb-1">已确认票据数</p>
+                <p className="text-xl font-bold text-slate-800">{recognizedInvoices.length} <span className="text-sm font-normal text-slate-400">张</span></p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">可加计扣除基数</p>
+                <p className="text-xl font-bold text-slate-800">¥{totalInputTax.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">最高加计扣除额（按{(maxRate * 100).toFixed(0)}%）</p>
+                <p className="text-xl font-bold text-slate-800">¥{(totalInputTax * maxRate).toFixed(2)}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -98,7 +102,7 @@ export default function DeductionPage() {
               <h3 className="text-sm font-bold text-slate-700">新增加计抵减申报</h3>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 active:text-slate-800 rounded-lg p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -144,13 +148,13 @@ export default function DeductionPage() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
               >
                 取消
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               >
                 确认添加
               </button>
@@ -195,15 +199,15 @@ export default function DeductionPage() {
 
                   <div className="grid grid-cols-3 gap-3 mb-3">
                     <div className="bg-slate-50 rounded-lg p-2">
-                      <p className="text-xs text-slate-500">进项税额</p>
+                      <p className="text-xs text-slate-500">加计扣除基数</p>
                       <p className="text-sm font-medium text-slate-700">¥{ded.inputTax.toLocaleString()}</p>
                     </div>
                     <div className="bg-slate-50 rounded-lg p-2">
-                      <p className="text-xs text-slate-500">抵减率</p>
+                      <p className="text-xs text-slate-500">加计比例</p>
                       <p className="text-sm font-medium text-violet-600">{(ded.deductionRate * 100).toFixed(0)}%</p>
                     </div>
                     <div className="bg-slate-50 rounded-lg p-2">
-                      <p className="text-xs text-slate-500">抵减额</p>
+                      <p className="text-xs text-slate-500">加计扣除额</p>
                       <p className="text-sm font-bold text-emerald-600">¥{ded.deductionAmount.toLocaleString()}</p>
                     </div>
                   </div>
@@ -212,7 +216,7 @@ export default function DeductionPage() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleSubmitDeduction(ded.id)}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors"
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
                       >
                         提交申报
                       </button>
@@ -231,7 +235,7 @@ export default function DeductionPage() {
           <div>
             <h4 className="text-sm font-bold text-amber-800 mb-1">政策依据</h4>
             <p className="text-xs text-amber-700 leading-relaxed">
-              根据《关于深化增值税改革有关政策的公告》，自2024年1月1日至2024年12月31日，允许生产性服务业纳税人按照当期可抵扣进项税额加计5%抵减应纳税额，生活性服务业纳税人按照当期可抵扣进项税额加计10%抵减应纳税额。绿色采购可享受15%加计抵减优惠。
+              根据企业所得税研发费用加计扣除政策，企业开展研发活动实际发生的研发费用，未形成无形资产计入当期损益的，可在按规定据实扣除的基础上，再按一定比例在税前加计扣除；企业购置并实际使用符合条件的节能节水、环境保护专用设备的，可按投资额的一定比例抵免当年应纳税额。
             </p>
           </div>
         </div>

@@ -9,7 +9,7 @@ export default function DeclarationPage() {
   const { isLoggedIn, hydrated, invoices, deductions, declarations, addDeclaration } = useApp();
   const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
-  const [period, setPeriod] = useState("2024-05");
+  const [period, setPeriod] = useState("2026-06");
 
   useEffect(() => {
     if (hydrated && !isLoggedIn) router.push("/");
@@ -40,33 +40,45 @@ export default function DeclarationPage() {
 
   return (
     <Layout>
-      <div className="p-6 max-w-5xl">
+      <div className="p-6 w-full">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-slate-800">智能申报</h1>
           <p className="text-sm text-slate-500">提交增值税申报，完成税务申报全流程</p>
         </div>
 
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <p className="text-xs text-slate-500 mb-1">申报期间</p>
-            <input
-              type="month"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="text-lg font-bold text-slate-800 bg-transparent outline-none w-full"
-            />
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="h-0.5 bg-slate-400" />
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-1">申报期间</p>
+              <input
+                type="month"
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="text-lg font-bold text-slate-800 bg-transparent outline-none w-full"
+              />
+            </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <p className="text-xs text-slate-500 mb-1">进项税额</p>
-            <p className="text-lg font-bold text-blue-600">¥{totalInputTax.toLocaleString()}</p>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="h-0.5 bg-blue-500" />
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-1">进项税额</p>
+              <p className="text-lg font-bold text-slate-800">¥{totalInputTax.toLocaleString()}</p>
+            </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <p className="text-xs text-slate-500 mb-1">加计抵减额</p>
-            <p className="text-lg font-bold text-violet-600">¥{totalDeduction.toLocaleString()}</p>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="h-0.5 bg-violet-500" />
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-1">加计抵减额</p>
+              <p className="text-lg font-bold text-slate-800">¥{totalDeduction.toLocaleString()}</p>
+            </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <p className="text-xs text-slate-500 mb-1">实际应纳税额</p>
-            <p className="text-lg font-bold text-emerald-600">¥{netTax.toFixed(2)}</p>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="h-0.5 bg-emerald-500" />
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-1">实际应纳税额</p>
+              <p className="text-lg font-bold text-slate-800">¥{netTax.toFixed(2)}</p>
+            </div>
           </div>
         </div>
 
@@ -139,7 +151,7 @@ export default function DeclarationPage() {
           <button
             onClick={() => setShowConfirm(true)}
             disabled={recognizedInvoices.length === 0}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-emerald-200"
+            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
           >
             提交智能申报
           </button>
@@ -184,7 +196,7 @@ export default function DeclarationPage() {
         )}
 
         {showConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
@@ -221,13 +233,13 @@ export default function DeclarationPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowConfirm(false)}
-                  className="flex-1 py-2.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="flex-1 py-2.5 text-sm text-slate-600 hover:bg-slate-100 active:bg-slate-200 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
                 >
                   取消
                 </button>
                 <button
                   onClick={handleDeclare}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
                 >
                   确认提交
                 </button>

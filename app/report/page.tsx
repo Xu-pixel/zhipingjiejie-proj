@@ -22,7 +22,7 @@ export default function ReportPage() {
 
   return (
     <Layout>
-      <div className="p-6 max-w-5xl">
+      <div className="p-6 w-full">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-slate-800">申报报告</h1>
           <p className="text-sm text-slate-500">查看和下载《绿色采购抵扣申报报告》</p>
@@ -47,9 +47,9 @@ export default function ReportPage() {
                   <button
                     key={dec.id}
                     onClick={() => setSelectedDec(dec.id)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                    className={`w-full text-left p-3 rounded-lg border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
                       selectedDec === dec.id
-                        ? "border-emerald-500 bg-emerald-50 shadow-sm"
+                        ? "border-emerald-500 bg-emerald-50"
                         : "border-slate-200 bg-white hover:border-emerald-300"
                     }`}
                   >
@@ -72,7 +72,7 @@ export default function ReportPage() {
             <div className="col-span-3">
               {declaration ? (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
+                  <div className="bg-emerald-700 p-6 text-white">
                     <div className="flex items-center gap-2 mb-2">
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -80,7 +80,7 @@ export default function ReportPage() {
                       <span className="text-sm font-medium">已生成</span>
                     </div>
                     <h2 className="text-lg font-bold">《绿色采购抵扣申报报告》</h2>
-                    <p className="text-emerald-100 text-sm mt-1">申报期间：{declaration.period}</p>
+                    <p className="text-emerald-200 text-sm mt-1">申报期间：{declaration.period}</p>
                   </div>
 
                   <div className="p-6">
@@ -153,7 +153,7 @@ export default function ReportPage() {
                   <div className="p-4 border-t border-slate-200 bg-slate-50 flex gap-3">
                     <button
                       onClick={() => alert("报告已下载")}
-                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -162,7 +162,7 @@ export default function ReportPage() {
                     </button>
                     <button
                       onClick={() => alert("报告已打印")}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-white border border-slate-200 rounded-lg transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-white active:bg-slate-100 border border-slate-200 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

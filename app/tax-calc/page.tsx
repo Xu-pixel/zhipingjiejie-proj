@@ -46,7 +46,7 @@ export default function TaxCalculationPage() {
 
   return (
     <Layout>
-      <div className="p-6 max-w-5xl">
+      <div className="p-6 w-full">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-slate-800">税额自动计算</h1>
@@ -55,17 +55,26 @@ export default function TaxCalculationPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
-            <p className="text-xs text-blue-600 mb-1">不含税金额合计</p>
-            <p className="text-2xl font-bold text-blue-700">¥{summary.totalAmount.toLocaleString()}</p>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="h-0.5 bg-blue-500" />
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-1">不含税金额合计</p>
+              <p className="text-xl font-bold text-slate-800">¥{summary.totalAmount.toLocaleString()}</p>
+            </div>
           </div>
-          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-200">
-            <p className="text-xs text-emerald-600 mb-1">进项税额合计</p>
-            <p className="text-2xl font-bold text-emerald-700">¥{summary.totalTax.toLocaleString()}</p>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="h-0.5 bg-emerald-500" />
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-1">进项税额合计</p>
+              <p className="text-xl font-bold text-slate-800">¥{summary.totalTax.toLocaleString()}</p>
+            </div>
           </div>
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200">
-            <p className="text-xs text-amber-600 mb-1">价税合计</p>
-            <p className="text-2xl font-bold text-amber-700">¥{summary.totalWithTax.toLocaleString()}</p>
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="h-0.5 bg-amber-500" />
+            <div className="p-4">
+              <p className="text-xs text-slate-500 mb-1">价税合计</p>
+              <p className="text-xl font-bold text-slate-800">¥{summary.totalWithTax.toLocaleString()}</p>
+            </div>
           </div>
         </div>
 
@@ -99,7 +108,7 @@ export default function TaxCalculationPage() {
             {!allCalculated && recognizedInvoices.length > 0 && (
               <button
                 onClick={handleConfirmAll}
-                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                className="text-xs bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
               >
                 确认全部计算结果
               </button>
@@ -179,7 +188,7 @@ export default function TaxCalculationPage() {
             </div>
             <div className="flex items-start gap-2">
               <span className="text-emerald-600 font-bold mt-0.5">4.</span>
-              <p><strong>加计抵减额</strong> = 可抵扣进项税额 × 加计抵减比例（生产性服务业5%，生活性服务业10%）</p>
+              <p><strong>加计扣除额</strong> = 可加计扣除基数 × 适用加计比例（按所选加计类别确定）</p>
             </div>
           </div>
         </div>

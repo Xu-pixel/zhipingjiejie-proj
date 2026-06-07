@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-07T13:55:12Z",
+  "title": "Design System: 3D智慧财税仿真平台",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "翡翠绿",
+        "canonical": "oklch(55% 0.15 160)",
+        "tonalRamp": [
+          "oklch(15% 0.08 160)",
+          "oklch(25% 0.12 160)",
+          "oklch(35% 0.14 160)",
+          "oklch(45% 0.15 160)",
+          "oklch(55% 0.15 160)",
+          "oklch(65% 0.14 160)",
+          "oklch(80% 0.10 160)",
+          "oklch(95% 0.03 160)"
+        ]
+      },
+      "primary-light": {
+        "role": "primary",
+        "displayName": "浅翡翠",
+        "canonical": "oklch(65% 0.15 160)",
+        "tonalRamp": [
+          "oklch(15% 0.08 160)",
+          "oklch(25% 0.12 160)",
+          "oklch(35% 0.14 160)",
+          "oklch(45% 0.15 160)",
+          "oklch(55% 0.15 160)",
+          "oklch(65% 0.15 160)",
+          "oklch(80% 0.10 160)",
+          "oklch(95% 0.03 160)"
+        ]
+      },
+      "primary-deep": {
+        "role": "primary",
+        "displayName": "深翡翠",
+        "canonical": "oklch(45% 0.14 160)",
+        "tonalRamp": [
+          "oklch(15% 0.08 160)",
+          "oklch(25% 0.12 160)",
+          "oklch(35% 0.14 160)",
+          "oklch(45% 0.14 160)",
+          "oklch(55% 0.15 160)",
+          "oklch(65% 0.14 160)",
+          "oklch(80% 0.10 160)",
+          "oklch(95% 0.03 160)"
+        ]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "浅灰背景",
+        "canonical": "oklch(98% 0.005 250)",
+        "tonalRamp": [
+          "oklch(20% 0.02 250)",
+          "oklch(30% 0.02 250)",
+          "oklch(40% 0.02 250)",
+          "oklch(55% 0.02 250)",
+          "oklch(70% 0.02 250)",
+          "oklch(85% 0.01 250)",
+          "oklch(93% 0.008 250)",
+          "oklch(98% 0.005 250)"
+        ]
+      },
+      "neutral-text": {
+        "role": "neutral",
+        "displayName": "正文色",
+        "canonical": "oklch(30% 0.02 250)",
+        "tonalRamp": [
+          "oklch(15% 0.02 250)",
+          "oklch(25% 0.02 250)",
+          "oklch(30% 0.02 250)",
+          "oklch(40% 0.02 250)",
+          "oklch(55% 0.02 250)",
+          "oklch(70% 0.02 250)",
+          "oklch(85% 0.01 250)",
+          "oklch(97% 0.005 250)"
+        ]
+      },
+      "functional-blue": {
+        "role": "functional",
+        "displayName": "步骤蓝",
+        "canonical": "oklch(60% 0.2 250)",
+        "tonalRamp": [
+          "oklch(20% 0.12 250)",
+          "oklch(30% 0.18 250)",
+          "oklch(40% 0.2 250)",
+          "oklch(50% 0.2 250)",
+          "oklch(60% 0.2 250)",
+          "oklch(70% 0.18 250)",
+          "oklch(85% 0.12 250)",
+          "oklch(95% 0.04 250)"
+        ]
+      },
+      "functional-red": {
+        "role": "functional",
+        "displayName": "错误红",
+        "canonical": "oklch(55% 0.22 25)",
+        "tonalRamp": [
+          "oklch(20% 0.15 25)",
+          "oklch(30% 0.2 25)",
+          "oklch(40% 0.22 25)",
+          "oklch(50% 0.22 25)",
+          "oklch(55% 0.22 25)",
+          "oklch(65% 0.2 25)",
+          "oklch(85% 0.1 25)",
+          "oklch(97% 0.03 25)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "页面级标题，仅用于页面顶部单一标题。"
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "区块标题、卡片内标题。系统最主要层级区分。"
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "正文、表单标签、导航项。系统默认字号。"
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "辅助说明、状态标签、徽章、统计后缀。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "diffuse-large",
+        "value": "0 25px 50px -12px rgba(148, 163, 184, 0.25)",
+        "purpose": "登录页大卡片，营造模态聚焦感。"
+      },
+      {
+        "name": "accent-glow",
+        "value": "0 10px 15px -3px rgba(16, 185, 129, 0.15)",
+        "purpose": "当前用于主按钮，趋向淘汰。"
+      },
+      {
+        "name": "lift-small",
+        "value": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        "purpose": "卡片悬停状态的轻微抬升。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "默认状态过渡 easing。"
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "按钮悬停、颜色变化。"
+      },
+      {
+        "name": "duration-normal",
+        "value": "200ms",
+        "purpose": "边框变化、透明度变化。"
+      },
+      {
+        "name": "duration-slow",
+        "value": "300ms",
+        "purpose": "侧边栏折叠、大尺寸状态变化。"
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "主操作按钮，用于登录、提交、下一步等关键行为。",
+      "html": "<button class=\"ds-btn-primary\">登录平台</button>",
+      "css": ".ds-btn-primary { background: #059669; color: #ffffff; padding: 10px 20px; font-size: 0.875rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: #047857; } .ds-btn-primary:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "次要操作按钮，用于取消、文字链接、低优先级行为。",
+      "html": "<button class=\"ds-btn-ghost\">使用演示账号一键填充</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #059669; padding: 8px 16px; font-size: 0.875rem; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { background: #ecfdf5; } .ds-btn-ghost:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }"
+    },
+    {
+      "name": "Default Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "内容容器，用于表单、信息区块、列表包裹。",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">卡片标题</h3><p class=\"ds-card-body\">卡片内容区域</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; } .ds-card-title { font-size: 1.125rem; font-weight: 700; color: #1e293b; margin: 0 0 8px 0; } .ds-card-body { font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "表单文本输入框。",
+      "html": "<label class=\"ds-input-label\">学号</label><input class=\"ds-input\" type=\"text\" placeholder=\"请输入学号\" />",
+      "css": ".ds-input-label { display: block; font-size: 0.875rem; font-weight: 500; color: #334155; margin-bottom: 6px; } .ds-input { width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; font-size: 0.875rem; color: #1e293b; outline: none; transition: border-color 150ms, box-shadow 150ms; box-sizing: border-box; } .ds-input::placeholder { color: #94a3b8; } .ds-input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-sidebar-item",
+      "description": "侧边栏导航项，深色背景上的菜单项。",
+      "html": "<a class=\"ds-nav-item ds-nav-item--active\" href=\"/dashboard\"><svg class=\"ds-nav-icon\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6\"/></svg><span>工作台</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; font-size: 0.875rem; color: #d1fae5; text-decoration: none; border-radius: 0; transition: background 150ms, color 150ms; position: relative; } .ds-nav-item:hover { background: rgba(5, 150, 105, 0.4); color: #ffffff; } .ds-nav-item--active { background: #059669; color: #ffffff; } .ds-nav-item--active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 20px; background: #ffffff; border-radius: 0 4px 4px 0; } .ds-nav-icon { width: 20px; height: 20px; flex-shrink: 0; }"
+    },
+    {
+      "name": "Step Card",
+      "kind": "card",
+      "refersTo": "card-step",
+      "description": "流程步骤卡片，展示申报流程中的各个阶段。",
+      "html": "<div class=\"ds-step-card\"><div class=\"ds-step-icon\"><svg fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\"/></svg></div><h3 class=\"ds-step-label\">票据识别</h3><p class=\"ds-step-desc\">上传票据，AI自动识别</p></div>",
+      "css": ".ds-step-card { background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; transition: border-color 200ms, box-shadow 200ms; cursor: pointer; position: relative; } .ds-step-card:hover { border-color: #6ee7b7; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); } .ds-step-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; margin-bottom: 12px; } .ds-step-icon svg { width: 20px; height: 20px; } .ds-step-label { font-size: 0.875rem; font-weight: 700; color: #1e293b; margin: 0 0 4px 0; } .ds-step-desc { font-size: 0.75rem; color: #64748b; margin: 0; }"
+    },
+    {
+      "name": "Error Alert",
+      "kind": "card",
+      "refersTo": "alert-error",
+      "description": "错误提示横幅，用于表单验证失败或操作异常。",
+      "html": "<div class=\"ds-alert\"><p class=\"ds-alert-text\">请输入姓名和学号</p></div>",
+      "css": ".ds-alert { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; } .ds-alert-text { font-size: 0.875rem; color: #dc2626; margin: 0; }"
+    },
+    {
+      "name": "Stats Badge",
+      "kind": "custom",
+      "refersTo": "badge-stats",
+      "description": "统计数字徽章，用于展示已识别票据数、已申报次数等。",
+      "html": "<div class=\"ds-stats\"><span class=\"ds-stats-label\">已识别票据</span><span class=\"ds-stats-value\">12<span class=\"ds-stats-suffix\">张</span></span></div>",
+      "css": ".ds-stats { background: #eff6ff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 16px; } .ds-stats-label { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 8px; } .ds-stats-value { font-size: 1.5rem; font-weight: 700; color: #2563eb; } .ds-stats-suffix { font-size: 0.875rem; font-weight: 400; color: #2563eb; margin-left: 4px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "现代学堂",
+    "overview": "这个平台的设计像一所精心设计的当代校园学习空间：温暖、有序、不沉闷。色彩以翠绿色为锚点，传递生机与成长感；灰调中性色保证信息层级清晰可读；功能色按步骤分配，让学生在流程中一眼识别自己所处的阶段。系统拒绝传统政务软件的沉闷包袱，也拒绝过度低龄化的卡通视觉。它追求的是一种「被认真对待的友好」：排版严谨、间距透气、圆角柔和，但绝不 sloppy。",
+    "keyCharacteristics": [
+      "单色调 emerald 主色 + slate 完整灰度中性色",
+      "5 个功能色按申报流程步骤分配（蓝/绿/紫/琥珀/玫瑰）",
+      "白色卡片在浅灰背景上形成层级",
+      "系统无衬线字体，字号紧凑（xs/sm/lg/2xl 四级阶梯）",
+      "圆角从 4px 到 16px 四级递增",
+      "深色 emerald 侧边栏作为品牌锚点"
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "emerald 主色在任意单屏上的使用面积不超过 15%。功能色每个步骤只出现一次（图标 + 标签），不扩散到无关区域。", "section": "colors" },
+      { "name": "The Dense Data Rule", "body": "财税数据界面信息密度高，字号以 sm（14px）为基准，xs（12px）用于辅助，避免 16px 默认字号造成的空间浪费。", "section": "typography" },
+      { "name": "The Border-First Rule", "body": "建立层级时，先尝试边框 + 背景色差异。只有当元素需要明确的「浮起」语义时才使用阴影。", "section": "elevation" }
+    ],
+    "dos": [
+      "用边框和背景色差异建立层级，优先于阴影。",
+      "保持 emerald 主色在单屏上的使用面积 ≤15%。",
+      "用功能色按步骤分配（蓝→紫→琥珀→玫瑰），帮助学生建立流程空间记忆。",
+      "使用 12px 圆角作为卡片默认，8px 作为按钮/输入框默认。",
+      "在表单错误时提供背景色（red-50）+ 边框色（red-200）+ 文字色（red-600）的完整三色状态。"
+    ],
+    "donts": [
+      "使用 border-left 或 border-right 大于 1px 的彩色条纹作为卡片或列表项的装饰。",
+      "使用 gradient text（background-clip: text），强调应通过字重和字号实现。",
+      "使用 hero-metric 模板（大数字+小标签+渐变强调）作为数据展示的主要形式。",
+      "使用一模一样的卡片网格（icon + heading + text 重复排列）作为功能展示。",
+      "出现传统政务网站的沉闷感：灰底蓝条、密密麻麻的表格、字号过小、表单无反馈。",
+      "出现过度低龄化的教育产品视觉：卡通 mascot、高饱和糖果色、emoji 堆砌。",
+      "出现千篇一律的 SaaS 着陆页模板：Hero + 3 feature cards + testimonial + CTA 的流水账结构。",
+      "使用 #000 纯黑或 #fff 纯白作为文字/背景色。"
+  }
+}
