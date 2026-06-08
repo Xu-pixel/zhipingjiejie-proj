@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/app/context/AppContext";
-import { demoAccounts, findAccount, type Account } from "@/app/services/accounts";
+import { findAccount } from "@/app/services/accounts";
 
 export default function Login() {
   const [name, setName] = useState("");
@@ -45,13 +45,6 @@ export default function Login() {
     }
     login(name, studentId, "student");
     router.push("/dashboard");
-  };
-
-  const fillAccount = (acc: Account) => {
-    setName(acc.name);
-    setStudentId(acc.id);
-    setPassword(acc.password);
-    setError("");
   };
 
   return (
@@ -129,23 +122,6 @@ export default function Login() {
               登录平台
             </button>
           </form>
-
-          <div className="mt-3">
-            <p className="text-xs text-slate-400 text-center mb-2">演示账号一键填充</p>
-            <div className="grid grid-cols-3 gap-2">
-              {demoAccounts.map((acc) => (
-                <button
-                  key={acc.id}
-                  type="button"
-                  onClick={() => fillAccount(acc)}
-                  className="py-1.5 px-2 rounded-lg border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1"
-                >
-                  <span className="block text-xs font-medium truncate">{acc.name}</span>
-                  <span className="block text-[10px] text-slate-400">{acc.role === "teacher" ? "教师" : "学生"}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-slate-200" />
