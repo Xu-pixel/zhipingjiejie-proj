@@ -78,7 +78,7 @@ export default function DashboardPage() {
     <Layout>
       <div className="p-6 w-full max-w-6xl">
         <header className="mb-8">
-          <h1 className="text-xl font-bold text-slate-800 mb-1 text-balance">
+          <h1 className="text-2xl font-bold text-slate-800 mb-1 text-balance">
             欢迎你，<span className="text-emerald-600">{studentName}</span>同学
           </h1>
           <p className="text-sm text-slate-600">
@@ -100,7 +100,7 @@ export default function DashboardPage() {
                 <p className="text-xs text-slate-500 mb-1">{s.label}</p>
                 <p className="text-base font-semibold text-slate-800 tabular-nums">
                   {s.value}
-                  <span className="text-xs font-normal text-slate-400 ml-1">{s.suffix}</span>
+                  <span className="text-xs font-normal text-slate-500 ml-1">{s.suffix}</span>
                 </p>
               </div>
             ))}
@@ -168,7 +168,7 @@ export default function DashboardPage() {
                           </span>
                         )}
 
-                        <span className="mt-2 block text-xs text-emerald-600 font-medium opacity-0 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-200">
+                        <span className="mt-2 block text-xs text-emerald-700 font-medium opacity-0 group-hover:opacity-100 motion-safe:transition-opacity motion-safe:duration-200">
                           进入此步骤
                         </span>
                       </div>
