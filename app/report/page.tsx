@@ -18,14 +18,14 @@ export default function ReportPage() {
 
   const declaration = declarations.find((d) => d.id === selectedDec);
 
-  if (!isLoggedIn) return null;
+  if (!hydrated || !isLoggedIn) return null;
 
   return (
     <Layout>
       <div className="p-6 w-full">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-slate-800">申报报告</h1>
-          <p className="text-sm text-slate-500">查看和下载《绿色采购抵扣申报报告》</p>
+          <p className="text-sm text-slate-500">查看和下载《企业所得税预缴申报报告》</p>
         </div>
 
         {declarations.length === 0 ? (
@@ -79,7 +79,7 @@ export default function ReportPage() {
                       </svg>
                       <span className="text-sm font-medium">已生成</span>
                     </div>
-                    <h2 className="text-lg font-bold">《绿色采购抵扣申报报告》</h2>
+                    <h2 className="text-lg font-bold">《企业所得税预缴申报报告》</h2>
                     <p className="text-emerald-200 text-sm mt-1">申报期间：{declaration.period}</p>
                   </div>
 
@@ -109,31 +109,57 @@ export default function ReportPage() {
                     <div className="mb-5 pb-5 border-b border-slate-200">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">税额汇总</h4>
                       <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">进项税额合计</span>
-                          <span className="font-medium text-slate-800">¥{declaration.totalInputTax.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">加计抵减额</span>
-                          <span className="font-medium text-violet-600">-¥{declaration.totalDeduction.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">涉及票据数</span>
-                          <span className="font-medium text-slate-800">{declaration.invoiceCount} 张</span>
-                        </div>
-                        <div className="flex justify-between text-base font-bold pt-2 border-t border-slate-100">
-                          <span className="text-slate-800">实际应纳税额</span>
-                          <span className="text-emerald-600">¥{declaration.netTax.toFixed(2)}</span>
-                        </div>
+                        {declaration.prepay ? (
+                          <>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">利润总额（第3行）</span>
+                              <span className="font-medium text-slate-800 tabular-nums">¥{declaration.prepay.profit.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">实际利润额（第10行）</span>
+                              <span className="font-medium text-slate-800 tabular-nums">¥{declaration.prepay.taxableProfit.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">应纳所得税额（第12行，税率25%）</span>
+                              <span className="font-medium text-slate-800 tabular-nums">¥{declaration.prepay.taxPayable.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">减：减免所得税额（第13行）</span>
+                              <span className="font-medium text-violet-600 tabular-nums">-¥{declaration.prepay.taxRelief.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">减：已缴及特定业务预缴（第14+15行）</span>
+                              <span className="font-medium text-slate-800 tabular-nums">-¥{(declaration.prepay.prepaid + declaration.prepay.specialPrepaid).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-base font-bold pt-2 border-t border-slate-100">
+                              <span className="text-slate-800">本期应补（退）所得税额（第16行）</span>
+                              <span className="text-emerald-600 tabular-nums">¥{declaration.netTax.toFixed(2)}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">应纳所得税额</span>
+                              <span className="font-medium text-slate-800 tabular-nums">¥{declaration.totalInputTax.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-600">减免所得税额</span>
+                              <span className="font-medium text-violet-600 tabular-nums">-¥{declaration.totalDeduction.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-base font-bold pt-2 border-t border-slate-100">
+                              <span className="text-slate-800">本期应补（退）所得税额</span>
+                              <span className="text-emerald-600 tabular-nums">¥{declaration.netTax.toFixed(2)}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div className="bg-emerald-50 rounded-lg p-4 mb-5">
-                      <h4 className="text-sm font-bold text-emerald-800 mb-2">绿色采购说明</h4>
+                      <h4 className="text-sm font-bold text-emerald-800 mb-2">申报说明</h4>
                       <p className="text-xs text-emerald-700 leading-relaxed">
-                        本次申报涉及的采购项目均为节能环保产品，符合绿色采购税收优惠政策。
-                        根据相关政策，享受增值税加计抵减优惠，有效降低企业税负。
-                        所有票据已通过3D智慧财税仿真平台AI识别验证，确保数据准确无误。
+                        本报告依据《中华人民共和国企业所得税月（季）度预缴纳税申报表（A类）》主表自动生成，按「按照实际利润额预缴」方式计算。
+                        第7行已并入加计扣除、免税收入等税收优惠，所有票据数据经3D智慧财税仿真平台AI识别核验。
                       </p>
                     </div>
 

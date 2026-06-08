@@ -38,6 +38,30 @@ export interface DeductionItem {
   status: "draft" | "submitted";
 }
 
+/**
+ * 企业所得税月（季）度预缴纳税申报表（A类）主表「预缴税款计算」行次
+ * 行号对应官方表样，computed 行（10/12/16）由输入行推导
+ */
+export interface PrepayReturn {
+  revenue: number;          // 1 营业收入
+  cost: number;             // 2 营业成本
+  profit: number;           // 3 利润总额
+  specialTaxable: number;   // 4 加：特定业务计算的应纳税所得额
+  nonTaxIncome: number;     // 5 减：不征税收入
+  accelDepr: number;        // 6 减：资产加速折旧、摊销（扣除）调减额
+  taxFreeAndExtra: number;  // 7 减：免税收入、减计收入、加计扣除
+  incomeReduction: number;  // 8 减：所得减免
+  lossOffset: number;       // 9 减：弥补以前年度亏损
+  taxableProfit: number;    // 10 实际利润额 = 3+4-5-6-7-8-9
+  rate: number;             // 11 税率（0.25）
+  taxPayable: number;       // 12 应纳所得税额 = 10×11
+  taxRelief: number;        // 13 减：减免所得税额
+  prepaid: number;          // 14 减：本年实际已缴纳所得税额
+  specialPrepaid: number;   // 15 减：特定业务预缴（征）所得税额
+  taxDue: number;           // 16 本期应补（退）所得税额 = 12-13-14-15
+  smallMicro: boolean;      // 小型微利企业
+}
+
 export interface Declaration {
   id: string;
   period: string;
@@ -47,6 +71,13 @@ export interface Declaration {
   netTax: number;
   status: "draft" | "submitted" | "approved";
   submitDate?: string;
+  prepay?: PrepayReturn;
+}
+
+export interface PolicyFile {
+  label: string;
+  href: string;
+  download: string;
 }
 
 export interface PolicyDoc {
@@ -57,6 +88,7 @@ export interface PolicyDoc {
   summary: string;
   content: string;
   isRead: boolean;
+  files?: PolicyFile[];
 }
 
 export interface GuideMessage {
@@ -128,6 +160,28 @@ const initialPolicies: PolicyDoc[] = [
     summary: "推进3D仿真、AI识别等技术在税务教学中的应用",
     content: "一、建设目标\n到2026年底，基本建成以3D仿真平台为支撑、AI智能识别为辅助、巡回指导为保障的智慧税务教学体系...",
     isRead: false,
+  },
+  {
+    id: "p5",
+    title: "中华人民共和国企业所得税月（季）度预缴纳税申报表（A类，2018年版，2020修订）",
+    category: "申报表单",
+    publishDate: "2020-06-01",
+    summary: "国家税务总局发布的企业所得税预缴申报表（A类）正式表样、填报说明及空白表模板。",
+    content:
+      "适用范围：实行查账征收企业所得税的居民企业纳税人，在月（季）度预缴纳税申报时填报。\n\n「预缴税款计算」主表行次：\n1　营业收入\n2　营业成本\n3　利润总额\n4　加：特定业务计算的应纳税所得额\n5　减：不征税收入\n6　减：资产加速折旧、摊销（扣除）调减额（A201020）\n7　减：免税收入、减计收入、加计扣除\n8　减：所得减免\n9　减：弥补以前年度亏损\n10  实际利润额（3+4-5-6-7-8-9）\n11  税率（25%）\n12  应纳所得税额（10×11）\n13  减：减免所得税额（含符合条件的小型微利企业减免）\n14  减：本年实际已缴纳所得税额\n15  减：特定业务预缴（征）所得税额\n16  本期应补（退）所得税额（12-13-14-15）\n\n小型微利企业判定：从业人数季度平均值不超过300人、资产总额季度平均值不超过5000万元、非国家限制或禁止行业，且实际利润额不超过300万元。",
+    isRead: false,
+    files: [
+      {
+        label: "填报说明（.doc）",
+        href: "/forms/qysds-prepay-A-2020-instructions.doc",
+        download: "企业所得税月（季）度预缴纳税申报表（A类）填报说明.doc",
+      },
+      {
+        label: "空白表模板（.xlsx）",
+        href: "/forms/qysds-prepay-A-blank.xlsx",
+        download: "企业所得税月（季）度预缴纳税申报表（A类）空白表.xlsx",
+      },
+    ],
   },
 ];
 
