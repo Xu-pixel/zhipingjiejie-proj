@@ -7,10 +7,8 @@ services:
       - "10020:3000"
     environment:
       - NODE_ENV=production
-      # 如有其他环境变量，在这里添加或引用 .env 文件
-      # - NEXT_PUBLIC_API_URL=http://localhost:3000
-    # env_file:
-    #   - .env.local
+    env_file:
+      - .env
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
