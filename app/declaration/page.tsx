@@ -9,6 +9,11 @@ const RATE = 0.25;
 const SMALL_MICRO_CEILING = 3_000_000; // 实际利润额 ≤ 300万 适用小型微利测算
 const SMALL_MICRO_EFFECTIVE = 0.05; // 小型微利企业实际税负 5%
 
+// 演示用预置数与评分标准答案
+const PRESET_PROFIT = 6_000_000; // 利润总额（第3行）预置数
+const STANDARD_ANSWER = 244_000; // 本期应纳企业所得税正确答案（用于评分）
+const SCORE_TOLERANCE = 0.5; // 与标准答案的允许误差（元）
+
 const officialFiles = [
   { label: "填报说明（.doc）", href: "/forms/qysds-prepay-A-2020-instructions.doc", download: "企业所得税月（季）度预缴纳税申报表（A类）填报说明.doc" },
   { label: "空白表模板（.xlsx）", href: "/forms/qysds-prepay-A-blank.xlsx", download: "企业所得税月（季）度预缴纳税申报表（A类）空白表.xlsx" },
@@ -58,7 +63,7 @@ export default function DeclarationPage() {
   const { isLoggedIn, hydrated, studentName, invoices, deductions, declarations, addDeclaration } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState("2026-06");
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [form, setForm] = useState<FormState>(() => ({ ...emptyForm, profit: PRESET_PROFIT }));
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
@@ -148,6 +153,11 @@ export default function DeclarationPage() {
   ];
 
   const taxDuePositive = calc.taxDue >= 0;
+
+  // 申报评分：以最近一次申报的「本期应补（退）所得税额」与标准答案比对
+  const latestDeclaration = declarations.length > 0 ? declarations[declarations.length - 1] : null;
+  const submittedTax = latestDeclaration ? latestDeclaration.netTax : 0;
+  const isCorrect = latestDeclaration != null && Math.abs(submittedTax - STANDARD_ANSWER) <= SCORE_TOLERANCE;
 
   return (
     <Layout>
@@ -372,6 +382,47 @@ export default function DeclarationPage() {
             提交预缴申报
           </button>
         </div>
+
+        {/* 申报评分 */}
+        {latestDeclaration && (
+          <section
+            aria-live="polite"
+            className={`mb-8 rounded-xl border p-5 ${
+              isCorrect ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"
+            }`}
+          >
+            <div className="flex items-start gap-4">
+              <div
+                className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-full text-white ${
+                  isCorrect ? "bg-emerald-600" : "bg-amber-500"
+                }`}
+              >
+                <span className="text-lg font-bold leading-none tabular-nums">{isCorrect ? 100 : 0}</span>
+                <span className="text-[10px] leading-none mt-0.5">分</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className={`text-sm font-bold ${isCorrect ? "text-emerald-800" : "text-amber-800"}`}>
+                  {isCorrect ? "申报正确，得分 100" : "申报结果与标准答案不一致"}
+                </h2>
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">你的申报（本期应纳企业所得税）</span>
+                    <span className="font-medium text-slate-800 tabular-nums">¥{fmt(submittedTax)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">标准答案</span>
+                    <span className="font-medium text-slate-800 tabular-nums">¥{fmt(STANDARD_ANSWER)}</span>
+                  </div>
+                </div>
+                {!isCorrect && (
+                  <p className="mt-2 text-xs text-amber-700 leading-relaxed">
+                    与标准答案相差 ¥{fmt(Math.abs(submittedTax - STANDARD_ANSWER))}。请检查第7行加计扣除、第13行减免所得税额等是否填报正确，调整后可再次提交。
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 申报记录 */}
         {declarations.length > 0 && (

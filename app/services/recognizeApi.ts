@@ -5,6 +5,7 @@
  */
 
 import { computeFileHash, getCachedResult, setCachedResult } from "./cacheDb";
+import { matchDemoInvoice } from "./demoInvoices";
 
 export interface ExtractedInvoice {
   type: string;
@@ -48,6 +49,13 @@ export async function recognizeInvoice(
   // 1. 计算文件 hash
   onProgress?.("计算文件特征...", 2);
   const hash = await computeFileHash(file);
+
+  // 1.5 演示票据：命中（文件哈希或文件名）直接返回预置识别结果，绕过真实识别
+  const demo = matchDemoInvoice(hash, file.name);
+  if (demo) {
+    onProgress?.("命中演示票据，已自动识别", 100);
+    return demo;
+  }
 
   // 2. 检查 IndexedDB 缓存
   onProgress?.("检查本地缓存...", 5);

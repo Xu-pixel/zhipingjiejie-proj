@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
-import { getAllInvoices, saveInvoiceToDb, deleteInvoiceFromDb } from "@/app/services/cacheDb";
+import { getAllInvoices, saveInvoiceToDb, deleteInvoiceFromDb, clearAllInvoices } from "@/app/services/cacheDb";
 
 export interface Invoice {
   id: string;
@@ -185,74 +185,12 @@ const initialPolicies: PolicyDoc[] = [
   },
 ];
 
-const initialInvoices: Invoice[] = [
-  {
-    id: "demo-001",
-    type: "增值税专用发票",
-    number: "4400123456",
-    date: "2024-05-10",
-    seller: "深圳华为技术有限公司",
-    buyer: "广东智慧科技有限公司",
-    amount: 88495.58,
-    taxRate: 0.13,
-    taxAmount: 11504.42,
-    totalAmount: 100000,
-    status: "recognized",
-    items: [
-      { name: "服务器主机", quantity: 2, unitPrice: 35398.23, amount: 70796.46, taxRate: 0.13, taxAmount: 9203.54 },
-      { name: "网络交换机", quantity: 1, unitPrice: 17699.12, amount: 17699.12, taxRate: 0.13, taxAmount: 2300.88 },
-    ],
-  },
-  {
-    id: "demo-002",
-    type: "增值税普通发票",
-    number: "4400987654",
-    date: "2024-05-15",
-    seller: "广州白云办公设备有限公司",
-    buyer: "广东智慧科技有限公司",
-    amount: 2654.87,
-    taxRate: 0.13,
-    taxAmount: 345.13,
-    totalAmount: 3000,
-    status: "recognized",
-    items: [
-      { name: "办公桌椅", quantity: 5, unitPrice: 530.97, amount: 2654.87, taxRate: 0.13, taxAmount: 345.13 },
-    ],
-  },
-  {
-    id: "demo-003",
-    type: "电子发票",
-    number: "EL20240518001",
-    date: "2024-05-18",
-    seller: "杭州阿里云科技有限公司",
-    buyer: "广东智慧科技有限公司",
-    amount: 4716.98,
-    taxRate: 0.06,
-    taxAmount: 283.02,
-    totalAmount: 5000,
-    status: "calculated",
-    items: [
-      { name: "云服务器租赁服务", quantity: 12, unitPrice: 393.08, amount: 4716.98, taxRate: 0.06, taxAmount: 283.02 },
-    ],
-  },
-  {
-    id: "demo-004",
-    type: "增值税专用发票",
-    number: "4400332211",
-    date: "2024-05-22",
-    seller: "北京用友网络科技股份有限公司",
-    buyer: "广东智慧科技有限公司",
-    amount: 16814.16,
-    taxRate: 0.13,
-    taxAmount: 2185.84,
-    totalAmount: 19000,
-    status: "recognized",
-    items: [
-      { name: "财务软件许可", quantity: 1, unitPrice: 8849.56, amount: 8849.56, taxRate: 0.13, taxAmount: 1150.44 },
-      { name: "实施服务费", quantity: 1, unitPrice: 7964.60, amount: 7964.60, taxRate: 0.13, taxAmount: 1035.40 },
-    ],
-  },
-];
+// 初始票据为空：4 张演示发票由用户在「票据识别」页上传，
+// 命中后由 services/demoInvoices.ts「假装识别」返回预置数据。
+const initialInvoices: Invoice[] = [];
+
+// 演示数据版本：升级后强制重置 IndexedDB 中的旧演示发票
+const INVOICE_SEED_VERSION = "qysds-prepay-demo-2026-06-upload";
 
 const initialGuideMessages: GuideMessage[] = [
   {
@@ -302,14 +240,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     setHydrated(true);
 
-    // 加载已识别票据（IndexedDB），首次为空则写入演示数据
-    getAllInvoices<Invoice>().then((dbInvoices) => {
-      if (dbInvoices.length > 0) {
-        setInvoices(dbInvoices);
-      } else {
-        initialInvoices.forEach((inv) => saveInvoiceToDb(inv).catch(() => {}));
+    // 加载已识别票据（IndexedDB）。演示数据版本变化时清空旧票据并写入新演示集。
+    (async () => {
+      try {
+        let seedVersion: string | null = null;
+        try { seedVersion = localStorage.getItem("invoice-seed-version"); } catch { /* ignore */ }
+
+        if (seedVersion !== INVOICE_SEED_VERSION) {
+          await clearAllInvoices();
+          await Promise.all(initialInvoices.map((inv) => saveInvoiceToDb(inv).catch(() => {})));
+          setInvoices(initialInvoices);
+          try { localStorage.setItem("invoice-seed-version", INVOICE_SEED_VERSION); } catch { /* ignore */ }
+          return;
+        }
+
+        const dbInvoices = await getAllInvoices<Invoice>();
+        if (dbInvoices.length > 0) {
+          setInvoices(dbInvoices);
+        } else {
+          await Promise.all(initialInvoices.map((inv) => saveInvoiceToDb(inv).catch(() => {})));
+          setInvoices(initialInvoices);
+        }
+      } catch {
+        setInvoices(initialInvoices);
       }
-    });
+    })();
   }, []);
 
   const login = useCallback((name: string, id: string) => {

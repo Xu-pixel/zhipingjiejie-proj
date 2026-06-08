@@ -112,3 +112,17 @@ export async function deleteInvoiceFromDb(id: string): Promise<void> {
     tx.onerror = () => reject(tx.error ?? new Error("IndexedDB delete invoice failed"));
   });
 }
+
+export async function clearAllInvoices(): Promise<void> {
+  try {
+    const db = await openDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(INVOICE_STORE, "readwrite");
+      tx.objectStore(INVOICE_STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("IndexedDB clear invoices failed"));
+    });
+  } catch {
+    // IndexedDB 不可用时静默降级
+  }
+}
