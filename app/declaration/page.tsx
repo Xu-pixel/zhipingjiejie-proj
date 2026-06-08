@@ -9,8 +9,21 @@ const RATE = 0.25;
 const SMALL_MICRO_CEILING = 3_000_000; // 实际利润额 ≤ 300万 适用小型微利测算
 const SMALL_MICRO_EFFECTIVE = 0.05; // 小型微利企业实际税负 5%
 
-// 演示用预置数与评分标准答案
-const PRESET_PROFIT = 6_000_000; // 利润总额（第3行）预置数
+// 纳税人信息（演示主体）
+const TAXPAYER_NAME = "汇成针织有限公司";
+const TAXPAYER_ID = "91350503MA9TNBHYXC";
+
+// 计入管理费用的研发费用（演示，2 张研发发票合计）
+const RD_EXPENSE_IN_ADMIN = 2_760_000;
+
+// 演示预置数：利润总额 = 营业收入 - 营业成本 - 销售费用 - 管理费用 - 财务费用 = 6,000,000
+const PRESET_REVENUE = 20_000_000;
+const PRESET_COST = 9_000_000;
+const PRESET_SELLING = 1_200_000;
+const PRESET_ADMIN = 3_500_000; // 含研发费用 2,760,000
+const PRESET_FINANCE = 300_000;
+
+// 评分标准答案
 const STANDARD_ANSWER = 244_000; // 本期应纳企业所得税正确答案（用于评分）
 const SCORE_TOLERANCE = 0.5; // 与标准答案的允许误差（元）
 
@@ -22,7 +35,9 @@ const officialFiles = [
 interface FormState {
   revenue: number;
   cost: number;
-  profit: number;
+  sellingExpense: number;
+  adminExpense: number;
+  financeExpense: number;
   specialTaxable: number;
   nonTaxIncome: number;
   accelDepr: number;
@@ -38,7 +53,9 @@ interface FormState {
 const emptyForm: FormState = {
   revenue: 0,
   cost: 0,
-  profit: 0,
+  sellingExpense: 0,
+  adminExpense: 0,
+  financeExpense: 0,
   specialTaxable: 0,
   nonTaxIncome: 0,
   accelDepr: 0,
@@ -63,7 +80,14 @@ export default function DeclarationPage() {
   const { isLoggedIn, hydrated, studentName, invoices, deductions, declarations, addDeclaration } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState("2026-06");
-  const [form, setForm] = useState<FormState>(() => ({ ...emptyForm, profit: PRESET_PROFIT }));
+  const [form, setForm] = useState<FormState>(() => ({
+    ...emptyForm,
+    revenue: PRESET_REVENUE,
+    cost: PRESET_COST,
+    sellingExpense: PRESET_SELLING,
+    adminExpense: PRESET_ADMIN,
+    financeExpense: PRESET_FINANCE,
+  }));
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
@@ -74,10 +98,13 @@ export default function DeclarationPage() {
   const submittedDeductions = deductions.filter((d) => d.status === "submitted");
   const deductionTotal = round2(submittedDeductions.reduce((s, d) => s + d.deductionAmount, 0));
 
-  // 计算行：10 实际利润额、12 应纳所得税额、16 本期应补（退）所得税额
+  // 计算行：3 利润总额、10 实际利润额、12 应纳所得税额、16 本期应补（退）所得税额
   const calc = useMemo(() => {
+    const profit = round2(
+      form.revenue - form.cost - form.sellingExpense - form.adminExpense - form.financeExpense,
+    );
     const taxableProfit = round2(
-      form.profit +
+      profit +
         form.specialTaxable -
         form.nonTaxIncome -
         form.accelDepr -
@@ -88,7 +115,7 @@ export default function DeclarationPage() {
     const taxBase = Math.max(0, taxableProfit);
     const taxPayable = round2(taxBase * RATE);
     const taxDue = round2(taxPayable - form.taxRelief - form.prepaid - form.specialPrepaid);
-    return { taxableProfit, taxBase, taxPayable, taxDue };
+    return { profit, taxableProfit, taxBase, taxPayable, taxDue };
   }, [form]);
 
   // 小型微利测算：应纳税所得额 ≤ 300万，按 5% 实际税负，差额即为可减免所得税额
@@ -107,7 +134,7 @@ export default function DeclarationPage() {
     const prepay: PrepayReturn = {
       revenue: form.revenue,
       cost: form.cost,
-      profit: form.profit,
+      profit: calc.profit,
       specialTaxable: form.specialTaxable,
       nonTaxIncome: form.nonTaxIncome,
       accelDepr: form.accelDepr,
@@ -139,18 +166,54 @@ export default function DeclarationPage() {
 
   if (!hydrated || !isLoggedIn) return null;
 
-  // 预缴税款计算行配置（行号对应官方表样）
-  const inputRows: { no: string; label: string; key: keyof FormState; hint?: string }[] = [
+  // 预缴税款计算行配置
+  type RowCfg = { no?: string; label: string; key: keyof FormState; hint?: string; hintClass?: string };
+
+  const rowsBeforeProfit: RowCfg[] = [
     { no: "1", label: "营业收入", key: "revenue" },
     { no: "2", label: "营业成本", key: "cost" },
-    { no: "3", label: "利润总额", key: "profit" },
+  ];
+  const expenseRows: RowCfg[] = [
+    { label: "减：销售费用", key: "sellingExpense" },
+    {
+      label: "减：管理费用",
+      key: "adminExpense",
+      hint: `含研发费用 ¥${RD_EXPENSE_IN_ADMIN.toLocaleString()}（在第7行享受加计扣除）`,
+      hintClass: "text-slate-400",
+    },
+    { label: "减：财务费用", key: "financeExpense" },
+  ];
+  const rowsAfterProfit: RowCfg[] = [
     { no: "4", label: "加：特定业务计算的应纳税所得额", key: "specialTaxable" },
     { no: "5", label: "减：不征税收入", key: "nonTaxIncome" },
     { no: "6", label: "减：资产加速折旧、摊销（扣除）调减额", key: "accelDepr" },
-    { no: "7", label: "减：免税收入、减计收入、加计扣除", key: "taxFreeAndExtra", hint: "已提交加计扣除自动带入，可手工调整" },
+    { no: "7", label: "减：免税收入、减计收入、加计扣除", key: "taxFreeAndExtra", hint: "已提交加计扣除自动带入，可手工调整", hintClass: "text-violet-600" },
     { no: "8", label: "减：所得减免", key: "incomeReduction" },
     { no: "9", label: "减：弥补以前年度亏损", key: "lossOffset" },
   ];
+
+  const renderInputRow = (row: RowCfg) => (
+    <div key={String(row.key)} className="flex items-center gap-3 px-5 py-2.5">
+      <span className="w-7 shrink-0 text-center text-xs font-mono text-slate-400 tabular-nums">{row.no ?? ""}</span>
+      <div className="min-w-0 flex-1">
+        <span className="text-sm text-slate-700">{row.label}</span>
+        {row.hint && <span className={`block text-xs ${row.hintClass ?? "text-violet-600"}`}>{row.hint}</span>}
+      </div>
+      <div className="relative w-40 shrink-0">
+        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">¥</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          value={form[row.key] === 0 ? "" : (form[row.key] as number)}
+          placeholder="0.00"
+          onChange={(e) => setField(row.key, Number(e.target.value) || 0)}
+          aria-label={row.no ? `第${row.no}行 ${row.label}` : row.label}
+          className="w-full pl-6 pr-2.5 py-1.5 text-right tabular-nums text-sm rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none"
+        />
+      </div>
+    </div>
+  );
 
   const taxDuePositive = calc.taxDue >= 0;
 
@@ -198,7 +261,7 @@ export default function DeclarationPage() {
 
         {/* 表头信息 */}
         <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label htmlFor="period" className="block text-xs font-medium text-slate-500 mb-1.5">税款所属期间</label>
               <input
@@ -211,11 +274,16 @@ export default function DeclarationPage() {
             </div>
             <div>
               <span className="block text-xs font-medium text-slate-500 mb-1.5">纳税人名称</span>
-              <p className="px-3 py-2 rounded-lg bg-slate-50 text-sm text-slate-700 truncate">{studentName || "学生用户"}</p>
+              <p className="px-3 py-2 rounded-lg bg-slate-50 text-sm text-slate-700 truncate">{TAXPAYER_NAME}</p>
+              <p className="mt-1 px-1 text-xs text-slate-400 font-mono truncate">{TAXPAYER_ID}</p>
             </div>
             <div>
               <span className="block text-xs font-medium text-slate-500 mb-1.5">预缴方式</span>
               <p className="px-3 py-2 rounded-lg bg-slate-50 text-sm text-slate-700">按照实际利润额预缴</p>
+            </div>
+            <div>
+              <span className="block text-xs font-medium text-slate-500 mb-1.5">经办人</span>
+              <p className="px-3 py-2 rounded-lg bg-slate-50 text-sm text-slate-700 truncate">{studentName || "学生用户"}</p>
             </div>
           </div>
           <label className="mt-4 flex items-center gap-2 text-sm text-slate-700 w-fit cursor-pointer">
@@ -243,28 +311,22 @@ export default function DeclarationPage() {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {inputRows.map((row) => (
-              <div key={row.no} className="flex items-center gap-3 px-5 py-2.5">
-                <span className="w-7 shrink-0 text-center text-xs font-mono text-slate-400 tabular-nums">{row.no}</span>
-                <div className="min-w-0 flex-1">
-                  <span className="text-sm text-slate-700">{row.label}</span>
-                  {row.hint && <span className="block text-xs text-violet-600">{row.hint}</span>}
-                </div>
-                <div className="relative w-40 shrink-0">
-                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">¥</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    value={form[row.key] === 0 ? "" : (form[row.key] as number)}
-                    placeholder="0.00"
-                    onChange={(e) => setField(row.key, Number(e.target.value) || 0)}
-                    aria-label={`第${row.no}行 ${row.label}`}
-                    className="w-full pl-6 pr-2.5 py-1.5 text-right tabular-nums text-sm rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none"
-                  />
-                </div>
+            {rowsBeforeProfit.map(renderInputRow)}
+            {expenseRows.map(renderInputRow)}
+
+            {/* 3 利润总额（计算） */}
+            <div className="flex items-center gap-3 px-5 py-2.5 bg-slate-50/70">
+              <span className="w-7 shrink-0 text-center text-xs font-mono text-slate-400 tabular-nums">3</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-medium text-slate-800">利润总额</span>
+                <span className="block text-xs text-slate-400">营业收入-营业成本-销售费用-管理费用-财务费用</span>
               </div>
-            ))}
+              <span className="w-40 shrink-0 text-right pr-2.5 text-sm font-semibold text-slate-800 tabular-nums">
+                ¥{fmt(calc.profit)}
+              </span>
+            </div>
+
+            {rowsAfterProfit.map(renderInputRow)}
 
             {/* 10 实际利润额（计算） */}
             <div className="flex items-center gap-3 px-5 py-2.5 bg-slate-50/70">

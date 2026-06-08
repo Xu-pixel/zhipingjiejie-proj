@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/app/context/AppContext";
+import { demoAccounts, findAccount, type Account } from "@/app/services/accounts";
 
 export default function Login() {
   const [name, setName] = useState("");
@@ -22,6 +23,18 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // 命中演示账号目录：校验密码，按账号带出姓名与角色
+    const account = findAccount(studentId);
+    if (account) {
+      if (password !== account.password) {
+        setError("密码错误");
+        return;
+      }
+      login(account.name, account.id, account.role);
+      router.push("/dashboard");
+      return;
+    }
+    // 其它账号：自由填写的虚拟登录（默认学生）
     if (!name.trim() || !studentId.trim()) {
       setError("请输入姓名和学号");
       return;
@@ -30,14 +43,14 @@ export default function Login() {
       setError("请输入密码");
       return;
     }
-    login(name, studentId);
+    login(name, studentId, "student");
     router.push("/dashboard");
   };
 
-  const fillDemo = () => {
-    setName("张三");
-    setStudentId("202401001");
-    setPassword("123456");
+  const fillAccount = (acc: Account) => {
+    setName(acc.name);
+    setStudentId(acc.id);
+    setPassword(acc.password);
     setError("");
   };
 
@@ -66,7 +79,7 @@ export default function Login() {
             <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <h2 className="text-lg font-bold text-slate-800">学生登录</h2>
+            <h2 className="text-lg font-bold text-slate-800">账号登录</h2>
           </div>
 
           {error && (
@@ -77,12 +90,12 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">学号</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">学号 / 账号</label>
               <input
                 type="text"
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
-                placeholder="请输入学号"
+                placeholder="请输入学号或教师账号"
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all text-sm"
               />
             </div>
@@ -117,12 +130,22 @@ export default function Login() {
             </button>
           </form>
 
-          <button
-            onClick={fillDemo}
-            className="w-full mt-3 py-2 text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 active:bg-emerald-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-          >
-            使用演示账号一键填充
-          </button>
+          <div className="mt-3">
+            <p className="text-xs text-slate-400 text-center mb-2">演示账号一键填充</p>
+            <div className="grid grid-cols-3 gap-2">
+              {demoAccounts.map((acc) => (
+                <button
+                  key={acc.id}
+                  type="button"
+                  onClick={() => fillAccount(acc)}
+                  className="py-1.5 px-2 rounded-lg border border-slate-200 text-slate-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1"
+                >
+                  <span className="block text-xs font-medium truncate">{acc.name}</span>
+                  <span className="block text-[10px] text-slate-400">{acc.role === "teacher" ? "教师" : "学生"}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-slate-200" />

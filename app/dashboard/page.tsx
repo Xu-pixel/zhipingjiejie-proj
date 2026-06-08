@@ -47,7 +47,7 @@ function getStepCompletion(invoices: Invoice[], deductions: DeductionItem[], dec
 }
 
 export default function DashboardPage() {
-  const { isLoggedIn, hydrated, studentName, invoices, deductions, declarations } = useApp();
+  const { isLoggedIn, hydrated, studentName, role, invoices, deductions, declarations } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function DashboardPage() {
       <div className="p-6 w-full max-w-6xl">
         <header className="mb-8">
           <h1 className="text-2xl font-bold text-slate-800 mb-1 text-balance">
-            欢迎你，<span className="text-emerald-600">{studentName}</span>同学
+            欢迎你，<span className="text-emerald-600">{studentName}</span>{role === "teacher" ? "" : "同学"}
           </h1>
           <p className="text-sm text-slate-600">
             {allStepsDone ? (

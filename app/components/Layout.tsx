@@ -112,7 +112,7 @@ const SidebarNavItem = memo(function SidebarNavItem({
 });
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { studentName, logout, invoices, declarations } = useApp();
+  const { studentName, role, logout, invoices, declarations } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -180,7 +180,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="overflow-hidden">
                 <p className="text-sm font-medium truncate">{displayStudent}</p>
-                <p className="text-xs text-emerald-300 truncate">在线学习中</p>
+                <p className="text-xs text-emerald-300 truncate">{role === "teacher" ? "教师 · 演示中" : "在线学习中"}</p>
               </div>
             </div>
           </div>

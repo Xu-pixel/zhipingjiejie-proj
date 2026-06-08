@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { getAllInvoices, saveInvoiceToDb, deleteInvoiceFromDb, clearAllInvoices } from "@/app/services/cacheDb";
+import type { Role } from "@/app/services/accounts";
 
 export interface Invoice {
   id: string;
@@ -103,13 +104,14 @@ interface AppState {
   hydrated: boolean;
   studentName: string;
   studentId: string;
+  role: Role;
   currentStep: number;
   invoices: Invoice[];
   deductions: DeductionItem[];
   declarations: Declaration[];
   policies: PolicyDoc[];
   guideMessages: GuideMessage[];
-  login: (name: string, id: string) => void;
+  login: (name: string, id: string, role?: Role) => void;
   logout: () => void;
   setCurrentStep: (step: number) => void;
   addInvoice: (invoice: Invoice) => void;
@@ -206,7 +208,7 @@ function readLoginState() {
     const raw = localStorage.getItem("login-state");
     if (!raw) return null;
     const data = JSON.parse(raw);
-    if (data?.name && data?.id) return data as { name: string; id: string };
+    if (data?.name && data?.id) return data as { name: string; id: string; role?: Role };
   } catch { /* ignore */ }
   return null;
 }
@@ -217,6 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [studentName, setStudentName] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [role, setRole] = useState<Role>("student");
   const [hydrated, setHydrated] = useState(false);
   const [currentStep, setCurrentStepState] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
@@ -236,6 +239,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (saved) {
       setStudentName(saved.name);
       setStudentId(saved.id);
+      setRole(saved.role ?? "student");
       setIsLoggedIn(true);
     }
     setHydrated(true);
@@ -267,17 +271,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const login = useCallback((name: string, id: string) => {
+  const login = useCallback((name: string, id: string, loginRole: Role = "student") => {
     setStudentName(name);
     setStudentId(id);
+    setRole(loginRole);
     setIsLoggedIn(true);
-    try { localStorage.setItem("login-state", JSON.stringify({ name, id })); } catch { /* ignore */ }
+    try { localStorage.setItem("login-state", JSON.stringify({ name, id, role: loginRole })); } catch { /* ignore */ }
   }, []);
 
   const logout = useCallback(() => {
     setIsLoggedIn(false);
     setStudentName("");
     setStudentId("");
+    setRole("student");
     setCurrentStepState(0);
     setInvoices(initialInvoices);
     setDeductions([]);
@@ -339,6 +345,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         hydrated,
         studentName,
         studentId,
+        role,
         currentStep,
         invoices,
         deductions,
