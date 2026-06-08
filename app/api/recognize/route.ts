@@ -1,9 +1,14 @@
-const VLLM_URL = process.env.VLLM_URL || "https://llmapi.blsc.cn";
-const VLLM_API_KEY = process.env.VLLM_API_KEY;
 const VLLM_MODEL = "Kimi-K2.6";
 
-if (!VLLM_API_KEY) {
-  throw new Error("Missing VLLM_API_KEY environment variable");
+function getVllmConfig() {
+  const apiKey = process.env.VLLM_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing VLLM_API_KEY environment variable");
+  }
+  return {
+    url: process.env.VLLM_URL || "https://llmapi.blsc.cn",
+    apiKey,
+  };
 }
 
 export interface ExtractedInvoice {
@@ -65,11 +70,12 @@ function isImageType(type: string): boolean {
 async function callVLLM(
   content: Array<{ type: string; [key: string]: unknown }>
 ): Promise<ExtractedInvoice> {
-  const res = await fetch(`${VLLM_URL}/v1/chat/completions`, {
+  const { url, apiKey } = getVllmConfig();
+  const res = await fetch(`${url}/v1/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${VLLM_API_KEY}`,
+      "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: VLLM_MODEL,
