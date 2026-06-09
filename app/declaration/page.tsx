@@ -23,8 +23,9 @@ const PRESET_SELLING = 1_200_000;
 const PRESET_ADMIN = 3_500_000; // 含研发费用 2,760,000
 const PRESET_FINANCE = 300_000;
 
-// 评分标准答案
-const STANDARD_ANSWER = 244_000; // 本期应纳企业所得税正确答案（用于评分）
+// 评分标准答案（按角色区分）：教师演示用发票1、2，学生实操用发票3、4
+const STANDARD_ANSWER_TEACHER = 200_000; // 教师演示正确答案
+const STANDARD_ANSWER_STUDENT = 492_000; // 学生实操正确答案
 const SCORE_TOLERANCE = 0.5; // 与标准答案的允许误差（元）
 
 const officialFiles = [
@@ -77,7 +78,7 @@ function fmt(n: number) {
 }
 
 export default function DeclarationPage() {
-  const { isLoggedIn, hydrated, studentName, invoices, deductions, declarations, addDeclaration } = useApp();
+  const { isLoggedIn, hydrated, studentName, role, invoices, deductions, declarations, addDeclaration } = useApp();
   const router = useRouter();
   const [period, setPeriod] = useState("2026-06");
   const [form, setForm] = useState<FormState>(() => ({
@@ -217,7 +218,8 @@ export default function DeclarationPage() {
 
   const taxDuePositive = calc.taxDue >= 0;
 
-  // 申报评分：以最近一次申报的「本期应补（退）所得税额」与标准答案比对
+  // 申报评分：标准答案按角色区分（教师演示 / 学生实操 票据不同）
+  const STANDARD_ANSWER = role === "teacher" ? STANDARD_ANSWER_TEACHER : STANDARD_ANSWER_STUDENT;
   const latestDeclaration = declarations.length > 0 ? declarations[declarations.length - 1] : null;
   const submittedTax = latestDeclaration ? latestDeclaration.netTax : 0;
   const isCorrect = latestDeclaration != null && Math.abs(submittedTax - STANDARD_ANSWER) <= SCORE_TOLERANCE;
