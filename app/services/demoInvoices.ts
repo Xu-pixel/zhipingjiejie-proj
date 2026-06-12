@@ -2,6 +2,8 @@
  * 演示票据「假装识别」表
  * 上传文件命中（按 SHA-256 文件哈希，或文件名关键字兜底）时，
  * 直接返回预置的识别结果，绕过真实 OCR/大模型，确保演示稳定可复现。
+ *
+ * 教师、学生各一张节能设备发票（设备抵免来自发票，研发费用等为题目给定参数）。
  */
 import type { ExtractedInvoice } from "./recognizeApi";
 
@@ -14,28 +16,9 @@ interface DemoEntry {
 
 const demoEntries: DemoEntry[] = [
   {
-    label: "发票1（研发·教师操作）",
-    hashes: ["31505dc58899c831d30ea94844a63345ab6c13ba47a9df12bdf1bd2d20c3ac18"],
-    nameKeywords: ["发票1"],
-    parsed: {
-      type: "增值税专用发票",
-      number: "26352000001238127662",
-      date: "2024-05-12",
-      seller: "泉州智创技术服务有限公司",
-      buyer: "汇成针织有限公司",
-      amount: 1000000,
-      taxRate: 0.06,
-      taxAmount: 60000,
-      totalAmount: 1060000,
-      items: [
-        { name: "研发费用-技术服务费（节能研发项目）", quantity: 1, unitPrice: 1000000, amount: 1000000, taxRate: 0.06, taxAmount: 60000 },
-      ],
-    },
-  },
-  {
-    label: "发票2（节能·教师操作）",
-    hashes: ["6fdb73a2eac53ab811203d6fbf8d9b743ad0a2b4038e5c8dd55ec811fb62dd82"],
-    nameKeywords: ["发票2"],
+    label: "发票（教师操作）·节能设备 YH-100",
+    hashes: ["1256300c20b817b24748941931cadd21c69ae00a12898ff480301b1a63562963"],
+    nameKeywords: ["教师操作"],
     parsed: {
       type: "增值税专用发票",
       number: "25352000001238127573",
@@ -52,28 +35,9 @@ const demoEntries: DemoEntry[] = [
     },
   },
   {
-    label: "发票3（研发·学生实操）",
-    hashes: ["a27c90b75e3934998c0f789ccfd6fbedb9e392ae7169d8369f87b1e24bd6f76e"],
-    nameKeywords: ["发票3"],
-    parsed: {
-      type: "增值税专用发票",
-      number: "26352000001238127782",
-      date: "2025-07-09",
-      seller: "泉州智创技术服务有限公司",
-      buyer: "汇成针织有限公司",
-      amount: 1760000,
-      taxRate: 0.06,
-      taxAmount: 105600,
-      totalAmount: 1865600,
-      items: [
-        { name: "研发费用-技术服务费（节能研发项目）", quantity: 1, unitPrice: 1760000, amount: 1760000, taxRate: 0.06, taxAmount: 105600 },
-      ],
-    },
-  },
-  {
-    label: "发票4（节能·学生实操）",
-    hashes: ["677397cb85703f444d4ca984a6508aa3c42837228b172a6e945fc32b86d23654"],
-    nameKeywords: ["发票4"],
+    label: "发票（学生实操）·节能设备 YH-200",
+    hashes: ["d357c093fbd293d626ffb595915fc070397cccd8525da0647ca149b7a310ffdd"],
+    nameKeywords: ["学生实操"],
     parsed: {
       type: "增值税专用发票",
       number: "25352000001238127671",

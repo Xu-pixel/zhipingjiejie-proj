@@ -192,7 +192,7 @@ const initialPolicies: PolicyDoc[] = [
 const initialInvoices: Invoice[] = [];
 
 // 演示数据版本：升级后强制重置 IndexedDB 中的旧演示发票
-const INVOICE_SEED_VERSION = "qysds-prepay-demo-2026-06-upload";
+const INVOICE_SEED_VERSION = "qysds-prepay-demo-2026-06-single";
 
 const initialGuideMessages: GuideMessage[] = [
   {

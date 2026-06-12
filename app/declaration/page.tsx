@@ -25,7 +25,7 @@ const PRESET_FINANCE = 300_000;
 
 // 评分标准答案（按角色区分）：教师演示用发票1、2，学生实操用发票3、4
 const STANDARD_ANSWER_TEACHER = 200_000; // 教师演示正确答案
-const STANDARD_ANSWER_STUDENT = 492_000; // 学生实操正确答案
+const STANDARD_ANSWER_STUDENT = 932_000; // 学生实操正确答案（93.2万元：106万应纳 - 12.8万设备抵免）
 const SCORE_TOLERANCE = 0.5; // 与标准答案的允许误差（元）
 
 const officialFiles = [
