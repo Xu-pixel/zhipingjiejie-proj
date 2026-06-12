@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp, type PrepayReturn } from "@/app/context/AppContext";
 import Layout from "@/app/components/Layout";
@@ -13,9 +13,6 @@ const SMALL_MICRO_EFFECTIVE = 0.05; // 小型微利企业实际税负 5%
 const TAXPAYER_NAME = "汇成针织有限公司";
 const TAXPAYER_ID = "91350503MA9TNBHYXC";
 
-// 计入管理费用的研发费用（演示，2 张研发发票合计）
-const RD_EXPENSE_IN_ADMIN = 2_760_000;
-
 // 演示预置数：利润总额 = 营业收入 - 营业成本 - 销售费用 - 管理费用 - 财务费用 = 6,000,000
 const PRESET_REVENUE = 20_000_000;
 const PRESET_COST = 9_000_000;
@@ -23,10 +20,18 @@ const PRESET_SELLING = 1_200_000;
 const PRESET_ADMIN = 3_500_000; // 含研发费用 2,760,000
 const PRESET_FINANCE = 300_000;
 
-// 评分标准答案（按角色区分）：教师演示用发票1、2，学生实操用发票3、4
+// 评分标准答案（按角色区分）
 const STANDARD_ANSWER_TEACHER = 200_000; // 教师演示正确答案
 const STANDARD_ANSWER_STUDENT = 932_000; // 学生实操正确答案（93.2万元：106万应纳 - 12.8万设备抵免）
 const SCORE_TOLERANCE = 0.5; // 与标准答案的允许误差（元）
+
+// 第7行加计扣除、第13行减免的演示预置（按角色），使中间计算与标准答案自洽
+// 学生：利润总额600万 - 研发加计176万 = 424万(第10行) × 25% = 106万(第12行) - 设备抵免12.8万 = 93.2万
+const STUDENT_DEDUCTION = 1_760_000; // 研发费用加计扣除 176万
+const STUDENT_RELIEF = 128_000; // 节能设备抵免 128万×10%
+// 教师：利润总额600万 - 研发加计500万 = 100万 × 25% = 25万 - 设备抵免5万 = 20万
+const TEACHER_DEDUCTION = 5_000_000;
+const TEACHER_RELIEF = 50_000; // 节能设备抵免 50万×10%
 
 const officialFiles = [
   { label: "填报说明（.doc）", href: "/forms/qysds-prepay-A-2020-instructions.doc", download: "企业所得税月（季）度预缴纳税申报表（A类）填报说明.doc" },
@@ -88,12 +93,24 @@ export default function DeclarationPage() {
     sellingExpense: PRESET_SELLING,
     adminExpense: PRESET_ADMIN,
     financeExpense: PRESET_FINANCE,
+    taxFreeAndExtra: STUDENT_DEDUCTION,
+    taxRelief: STUDENT_RELIEF,
   }));
   const [showConfirm, setShowConfirm] = useState(false);
+  const presetAppliedRef = useRef(false);
 
   useEffect(() => {
     if (hydrated && !isLoggedIn) router.push("/");
   }, [hydrated, isLoggedIn, router]);
+
+  // 教师登录时把第7行/第13行切换为教师演示预置（仅首次，之后不覆盖手工修改）
+  useEffect(() => {
+    if (!hydrated || presetAppliedRef.current) return;
+    presetAppliedRef.current = true;
+    if (role === "teacher") {
+      setForm((f) => ({ ...f, taxFreeAndExtra: TEACHER_DEDUCTION, taxRelief: TEACHER_RELIEF }));
+    }
+  }, [hydrated, role]);
 
   const recognizedInvoices = invoices.filter((i) => i.status === "calculated" || i.status === "declared");
   const submittedDeductions = deductions.filter((d) => d.status === "submitted");
@@ -179,7 +196,7 @@ export default function DeclarationPage() {
     {
       label: "减：管理费用",
       key: "adminExpense",
-      hint: `含研发费用 ¥${RD_EXPENSE_IN_ADMIN.toLocaleString()}（在第7行享受加计扣除）`,
+      hint: "含研发费用，在第7行享受加计扣除",
       hintClass: "text-slate-400",
     },
     { label: "减：财务费用", key: "financeExpense" },
